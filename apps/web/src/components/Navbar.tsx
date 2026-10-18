@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { LogoLink } from "@/components/Logo";
 
 const NAV_LINKS = [
-  { href: "#features", label: "Features" },
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#pricing", label: "Pricing" },
+  { href: "/#features", label: "Features" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#pricing", label: "Pricing" },
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const { data: session, status } = useSession();
 
   return (
     <header
@@ -39,14 +41,38 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* CTA */}
+          {/* CTA / Auth State */}
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/auth/login" className="btn btn-ghost text-sm">
-              Sign in
-            </Link>
-            <Link href="/auth/signup" className="btn btn-primary text-sm px-5 py-2">
-              Get started free
-            </Link>
+            {status === "loading" ? (
+              <div className="h-8 w-20 bg-bg-card/50 rounded-lg animate-pulse" />
+            ) : session?.user ? (
+              <div className="flex items-center gap-3">
+                <Link href="/dashboard" className="btn btn-ghost text-sm">
+                  Dashboard
+                </Link>
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-xs text-text-primary">
+                  <div className="w-2 h-2 rounded-full bg-accent-emerald animate-pulse" />
+                  <span className="max-w-[120px] truncate font-medium">
+                    {session.user.name || session.user.email}
+                  </span>
+                </div>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="btn btn-ghost text-sm text-text-muted hover:text-red-400"
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link href="/login" className="btn btn-ghost text-sm">
+                  Sign in
+                </Link>
+                <Link href="/register" className="btn btn-primary text-sm px-5 py-2">
+                  Get started free
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile burger */}
@@ -99,12 +125,43 @@ export function Navbar() {
             </a>
           ))}
           <div className="border-t border-border-subtle pt-3 mt-1 flex flex-col gap-2">
-            <Link href="/auth/login" className="btn btn-secondary text-sm">
-              Sign in
-            </Link>
-            <Link href="/auth/signup" className="btn btn-primary text-sm">
-              Get started free
-            </Link>
+            {session?.user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="btn btn-secondary text-sm"
+                  onClick={() => setOpen(false)}
+                >
+                  Dashboard ({session.user.name || session.user.email})
+                </Link>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    signOut({ callbackUrl: "/" });
+                  }}
+                  className="btn btn-ghost text-sm text-red-400 justify-start"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="btn btn-secondary text-sm"
+                  onClick={() => setOpen(false)}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/register"
+                  className="btn btn-primary text-sm"
+                  onClick={() => setOpen(false)}
+                >
+                  Get started free
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </div>

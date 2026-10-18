@@ -12,10 +12,16 @@
     "build": "npm run build --workspace=apps/web",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:push": "prisma db push --schema=packages/db/prisma/schema.prisma",
+    "db:studio": "prisma studio --schema=packages/db/prisma/schema.prisma",
+    "db:generate": "prisma generate --schema=packages/db/prisma/schema.prisma"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "babel-plugin-react-compiler": "^1.0.0"
   }
 }
