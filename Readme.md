@@ -24,9 +24,9 @@ syncsave/
 | # | Milestone | Status |
 |---|-----------|--------|
 | 1 | Project Scaffold & Design System | ✅ Done |
-| 2 | Auth (NextAuth.js + Neon) | ⏳ Next |
-| 3 | Document CRUD + Dashboard | ⏳ Pending |
-| 4 | Rich-Text Editor (TipTap) | ⏳ Pending |
+| 2 | Auth (NextAuth.js + Neon) | ✅ Done |
+| 3 | Document CRUD + Dashboard | ✅ Done |
+| 4 | Rich-Text Editor (TipTap) | ⏳ Next |
 | 5 | Real-Time Collaboration (Yjs + WebSockets) | ⏳ Pending |
 | 6 | Offline-First & PWA | ⏳ Pending |
 | 7 | Sharing, Permissions & Notifications | ⏳ Pending |

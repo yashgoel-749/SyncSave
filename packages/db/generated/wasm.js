@@ -161,14 +161,34 @@ exports.Prisma.VerificationTokenScalarFieldEnum = {
   expires: 'expires'
 };
 
+exports.Prisma.WorkspaceScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  description: 'description',
+  ownerId: 'ownerId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.WorkspaceMemberScalarFieldEnum = {
+  id: 'id',
+  workspaceId: 'workspaceId',
+  userId: 'userId',
+  role: 'role',
+  joinedAt: 'joinedAt'
+};
+
 exports.Prisma.DocumentScalarFieldEnum = {
   id: 'id',
   title: 'title',
   content: 'content',
   yjsState: 'yjsState',
   isPublic: 'isPublic',
+  isArchived: 'isArchived',
   deletedAt: 'deletedAt',
   ownerId: 'ownerId',
+  workspaceId: 'workspaceId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -196,6 +216,12 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.WorkspaceRole = exports.$Enums.WorkspaceRole = {
+  OWNER: 'OWNER',
+  ADMIN: 'ADMIN',
+  MEMBER: 'MEMBER'
+};
+
 exports.DocumentRole = exports.$Enums.DocumentRole = {
   OWNER: 'OWNER',
   EDITOR: 'EDITOR',
@@ -207,6 +233,8 @@ exports.Prisma.ModelName = {
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
+  Workspace: 'Workspace',
+  WorkspaceMember: 'WorkspaceMember',
   Document: 'Document',
   Collaborator: 'Collaborator'
 };

@@ -29,10 +29,12 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  ownedDocuments Document[]     @relation("Owner")
-  collaborations Collaborator[]
-  sessions       Session[]
-  accounts       Account[]
+  ownedDocuments   Document[]        @relation("Owner")
+  collaborations   Collaborator[]
+  sessions         Session[]
+  accounts         Account[]
+  ownedWorkspaces  Workspace[]       @relation("WorkspaceOwner")
+  workspaceMembers WorkspaceMember[]
 
   @@index([email])
   @@map("users")
@@ -82,6 +84,47 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+// ── Workspaces ─────────────────────────────────────────────────────
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String?
+  description String?
+  ownerId     String
+  owner       User     @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members   WorkspaceMember[]
+  documents Document[]
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@index([workspaceId])
+  @@map("workspace_members")
+}
+
 // ── Documents ──────────────────────────────────────────────────────
 
 enum DocumentRole {
@@ -91,15 +134,19 @@ enum DocumentRole {
 }
 
 model Document {
-  id        String    @id @default(cuid())
-  title     String    @default("Untitled")
-  content   String?   @db.Text // serialised TipTap JSON (backup)
-  yjsState  Bytes? // persisted Yjs binary update
-  isPublic  Boolean   @default(false)
-  deletedAt DateTime? // soft delete
+  id         String    @id @default(cuid())
+  title      String    @default("Untitled")
+  content    String?   @db.Text // serialised TipTap JSON (backup)
+  yjsState   Bytes? // persisted Yjs binary update
+  isPublic   Boolean   @default(false)
+  isArchived Boolean   @default(false)
+  deletedAt  DateTime? // soft delete
 
   ownerId String
   owner   User   @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   collaborators Collaborator[]
 
@@ -107,7 +154,10 @@ model Document {
   updatedAt DateTime @updatedAt
 
   @@index([ownerId])
+  @@index([workspaceId])
   @@index([deletedAt])
+  @@index([isArchived])
+  @@index([ownerId, deletedAt, isArchived])
   @@map("documents")
 }
 
