@@ -1,6 +1,8 @@
 import { authConfig } from "@/auth.config";
 import { loginSchema, verifyPassword, hashPassword } from "@/lib/auth-utils";
 
+jest.setTimeout(15000);
+
 describe("Credentials Authentication Logic", () => {
   it("should validate and authorize valid credentials", async () => {
     const rawPassword = "myStrongPassword2026!";

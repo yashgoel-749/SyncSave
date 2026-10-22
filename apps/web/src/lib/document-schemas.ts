@@ -39,8 +39,10 @@ export const updateDocumentSchema = z.object({
     .min(1, "Title cannot be empty")
     .max(100, "Title must be 100 characters or less")
     .optional(),
+  content: z.string().nullable().optional(),
   isArchived: z.boolean().optional(),
   isPublic: z.boolean().optional(),
+  clientUpdatedAt: z.string().optional(),
 });
 
 export const documentQuerySchema = z.object({

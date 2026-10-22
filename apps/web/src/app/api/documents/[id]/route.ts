@@ -7,7 +7,11 @@ import {
   permanentDeleteDocument,
 } from "@/lib/document-service";
 import { updateDocumentSchema } from "@/lib/document-schemas";
-import { AuthorizationError, NotFoundError } from "@/lib/workspace-service";
+import {
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+} from "@/lib/workspace-service";
 
 export async function GET(
   _request: Request,
@@ -60,6 +64,12 @@ export async function PATCH(
     const updated = await updateDocument(id, session.user.id, parsed.data);
     return NextResponse.json({ document: updated });
   } catch (error) {
+    if (error instanceof ConflictError) {
+      return NextResponse.json(
+        { error: error.message, code: "CONFLICT" },
+        { status: 409 }
+      );
+    }
     if (error instanceof AuthorizationError) {
       return NextResponse.json({ error: error.message }, { status: 403 });
     }

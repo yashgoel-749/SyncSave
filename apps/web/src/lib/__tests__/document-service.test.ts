@@ -7,7 +7,7 @@ import {
   restoreDocument,
   permanentDeleteDocument,
 } from "../document-service";
-import { AuthorizationError, NotFoundError } from "../workspace-service";
+import { AuthorizationError, NotFoundError, ConflictError } from "../workspace-service";
 import prisma from "@/lib/prisma";
 
 jest.mock("@/lib/prisma", () => ({
@@ -143,6 +143,55 @@ describe("Document Service & Permissions Enforcement", () => {
       await expect(
         updateDocument("doc_1", "usr_stranger", { title: "Hacked" })
       ).rejects.toThrow(AuthorizationError);
+    });
+
+    it("should update document content correctly", async () => {
+      const mockTipTapContent = JSON.stringify({
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ type: "text", text: "Hello TipTap" }] }],
+      });
+
+      (prisma.document.findUnique as jest.Mock).mockResolvedValueOnce({
+        id: "doc_1",
+        ownerId: "usr_alice",
+        collaborators: [],
+        updatedAt: new Date("2026-10-22T10:00:00Z"),
+      });
+
+      (prisma.document.update as jest.Mock).mockResolvedValueOnce({
+        id: "doc_1",
+        content: mockTipTapContent,
+      });
+
+      const updated = await updateDocument("doc_1", "usr_alice", {
+        content: mockTipTapContent,
+      });
+
+      expect(updated.content).toBe(mockTipTapContent);
+      expect(prisma.document.update).toHaveBeenCalledWith({
+        where: { id: "doc_1" },
+        data: { content: mockTipTapContent },
+        include: expect.any(Object),
+      });
+    });
+
+    it("should throw ConflictError if clientUpdatedAt is stale compared to server updatedAt", async () => {
+      const serverDate = new Date("2026-10-22T12:00:00Z");
+      const staleClientDate = "2026-10-22T11:00:00Z"; // 1 hour older
+
+      (prisma.document.findUnique as jest.Mock).mockResolvedValueOnce({
+        id: "doc_1",
+        ownerId: "usr_alice",
+        collaborators: [],
+        updatedAt: serverDate,
+      });
+
+      await expect(
+        updateDocument("doc_1", "usr_alice", {
+          title: "Overwriting Edit",
+          clientUpdatedAt: staleClientDate,
+        })
+      ).rejects.toThrow(ConflictError);
     });
   });
 

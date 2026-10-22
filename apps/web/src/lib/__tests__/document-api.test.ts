@@ -155,6 +155,48 @@ describe("Document & Workspace API Routes", () => {
         { title: "Renamed Title" }
       );
     });
+
+    it("should update document content and return 200", async () => {
+      (auth as jest.Mock).mockResolvedValueOnce({ user: { id: "usr_owner" } });
+      const tipTapJson = JSON.stringify({ type: "doc", content: [] });
+      (docService.updateDocument as jest.Mock).mockResolvedValueOnce({
+        id: "doc_1",
+        content: tipTapJson,
+      });
+
+      const req = new Request("http://localhost:3000/api/documents/doc_1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: tipTapJson }),
+      });
+      const res = await patchDocById(req, { params: Promise.resolve({ id: "doc_1" }) });
+
+      expect(res.status).toBe(200);
+      expect(docService.updateDocument).toHaveBeenCalledWith(
+        "doc_1",
+        "usr_owner",
+        { content: tipTapJson }
+      );
+    });
+
+    it("should return 409 Conflict when updateDocument throws ConflictError", async () => {
+      (auth as jest.Mock).mockResolvedValueOnce({ user: { id: "usr_owner" } });
+      (docService.updateDocument as jest.Mock).mockRejectedValueOnce(
+        new wsService.ConflictError("Stale write conflict")
+      );
+
+      const req = new Request("http://localhost:3000/api/documents/doc_1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Conflict test", clientUpdatedAt: "2026-10-22T00:00:00Z" }),
+      });
+      const res = await patchDocById(req, { params: Promise.resolve({ id: "doc_1" }) });
+      const data = await res.json();
+
+      expect(res.status).toBe(409);
+      expect(data.code).toBe("CONFLICT");
+      expect(data.error).toBe("Stale write conflict");
+    });
   });
 
   describe("DELETE /api/documents/[id]", () => {

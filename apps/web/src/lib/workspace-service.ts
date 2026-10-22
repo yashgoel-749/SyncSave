@@ -15,6 +15,15 @@ export class NotFoundError extends Error {
   }
 }
 
+export class ConflictError extends Error {
+  constructor(
+    message = "Document was modified by another session. Please reload to avoid overwriting changes."
+  ) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
 export async function getUserWorkspaces(userId: string) {
   let workspaces = await prisma.workspace.findMany({
     where: {

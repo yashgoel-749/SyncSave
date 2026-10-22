@@ -1,5 +1,10 @@
 import prisma from "@/lib/prisma";
-import { AuthorizationError, NotFoundError, verifyWorkspaceAccess } from "./workspace-service";
+import {
+  AuthorizationError,
+  NotFoundError,
+  ConflictError,
+  verifyWorkspaceAccess,
+} from "./workspace-service";
 import type { DocumentQueryParams } from "./document-schemas";
 import type { Prisma } from "@syncspace/db";
 
@@ -164,14 +169,33 @@ export async function getDocument(documentId: string, userId: string) {
 export async function updateDocument(
   documentId: string,
   userId: string,
-  data: { title?: string; isArchived?: boolean; isPublic?: boolean }
+  data: {
+    title?: string;
+    content?: string | null;
+    isArchived?: boolean;
+    isPublic?: boolean;
+    clientUpdatedAt?: string;
+  }
 ) {
-  await verifyDocumentAccess(documentId, userId, "EDIT");
+  const { document } = await verifyDocumentAccess(documentId, userId, "EDIT");
+
+  // Prevent stale requests from overwriting newer edits:
+  // If client provided a baseline updatedAt timestamp, ensure server's updatedAt hasn't advanced past it (allowing 1000ms clock skew)
+  if (data.clientUpdatedAt) {
+    const clientDate = new Date(data.clientUpdatedAt).getTime();
+    const serverDate = new Date(document.updatedAt).getTime();
+    if (!isNaN(clientDate) && serverDate - clientDate > 1000) {
+      throw new ConflictError(
+        "Document has been updated by another session. Please reload to avoid overwriting newer edits."
+      );
+    }
+  }
 
   return prisma.document.update({
     where: { id: documentId },
     data: {
       ...(data.title !== undefined && { title: data.title.trim() }),
+      ...(data.content !== undefined && { content: data.content }),
       ...(data.isArchived !== undefined && { isArchived: data.isArchived }),
       ...(data.isPublic !== undefined && { isPublic: data.isPublic }),
     },
