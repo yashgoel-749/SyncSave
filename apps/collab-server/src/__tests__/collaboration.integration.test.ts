@@ -446,5 +446,125 @@ describe("Real-time Collaboration & Synchronization Integration Tests", () => {
       pReborn.destroy();
       ydocReborn.destroy();
     });
+
+    it("should converge deterministically without data loss when multiple clients edit while disconnected and reconnect", async () => {
+      const docId = "doc_offline_convergence";
+      let persistedYjsState: Buffer | null = null;
+
+      (prisma.document.findUnique as jest.Mock).mockImplementation(() =>
+        Promise.resolve({
+          id: docId,
+          title: "Offline Convergence Test",
+          content: null,
+          yjsState: persistedYjsState,
+          deletedAt: null,
+        })
+      );
+
+      (prisma.document.update as jest.Mock).mockImplementation(({ data }) => {
+        if (data.yjsState) {
+          persistedYjsState = data.yjsState;
+        }
+        return Promise.resolve({ id: docId, ...data });
+      });
+
+      const tokenA = signCollabToken({
+        userId: "usr_alice",
+        name: "Alice",
+        email: "alice@test.dev",
+        documentId: docId,
+        role: "EDITOR",
+        exp: Date.now() + 60000,
+      });
+
+      const tokenB = signCollabToken({
+        userId: "usr_bob",
+        name: "Bob",
+        email: "bob@test.dev",
+        documentId: docId,
+        role: "EDITOR",
+        exp: Date.now() + 60000,
+      });
+
+      // 1. Initial shared session: Alice connects and writes base text
+      const ydocA = new Y.Doc();
+      const pA1 = new WebsocketProvider(serverUrl, docId, ydocA, { params: { token: tokenA } });
+
+      await new Promise<void>((resolve) => {
+        pA1.on("sync", (synced: boolean) => {
+          if (synced) resolve();
+        });
+      });
+
+      ydocA.getText("notes").insert(0, "BaseDocument");
+
+      // Bob connects and synchronizes base state
+      const ydocB = new Y.Doc();
+      const pB1 = new WebsocketProvider(serverUrl, docId, ydocB, { params: { token: tokenB } });
+
+      await new Promise<void>((resolve) => {
+        pB1.on("sync", (synced: boolean) => {
+          if (synced) resolve();
+        });
+      });
+
+      expect(ydocB.getText("notes").toString()).toBe("BaseDocument");
+
+      // 2. Both clients disconnect from the network
+      pA1.destroy();
+      pB1.destroy();
+
+      // 3. Both clients perform edits while disconnected (offline)
+      // Alice appends text
+      ydocA.getText("notes").insert(ydocA.getText("notes").length, " + AliceOffline");
+      // Bob prepends text
+      ydocB.getText("notes").insert(0, "BobOffline + ");
+
+      expect(ydocA.getText("notes").toString()).toBe("BaseDocument + AliceOffline");
+      expect(ydocB.getText("notes").toString()).toBe("BobOffline + BaseDocument");
+
+      // 4. Clients reconnect to the server (simulating network return)
+      const pA2 = new WebsocketProvider(serverUrl, docId, ydocA, { params: { token: tokenA } });
+      const pB2 = new WebsocketProvider(serverUrl, docId, ydocB, { params: { token: tokenB } });
+
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          pA2.on("sync", (synced: boolean) => {
+            if (synced) resolve();
+          });
+        }),
+        new Promise<void>((resolve) => {
+          pB2.on("sync", (synced: boolean) => {
+            if (synced) resolve();
+          });
+        }),
+      ]);
+
+      // Allow a brief tick for cross-client broadcast exchange
+      await new Promise((r) => setTimeout(r, 200));
+
+      const finalTextA = ydocA.getText("notes").toString();
+      const finalTextB = ydocB.getText("notes").toString();
+      const serverDoc = documentManager.docs.get(docId);
+      const finalServerText = serverDoc ? serverDoc.getText("notes").toString() : "";
+
+      // 5. Assert: Both clients and server converge deterministically to the identical state
+      expect(finalTextA).toBe(finalTextB);
+      expect(finalTextA).toBe(finalServerText);
+
+      // Verify that neither edit was overwritten or lost
+      expect(finalTextA).toContain("BobOffline");
+      expect(finalTextA).toContain("BaseDocument");
+      expect(finalTextA).toContain("AliceOffline");
+
+      // Flush to DB and verify durable persistence
+      await documentManager.flushAll();
+      expect(persistedYjsState).not.toBeNull();
+
+      pA2.destroy();
+      pB2.destroy();
+      ydocA.destroy();
+      ydocB.destroy();
+    });
   });
 });

@@ -20,6 +20,14 @@ class CustomEnvironment extends JSDOMEnvironment {
     if (typeof fetch !== "undefined") {
       this.global.fetch = fetch;
     }
+
+    try {
+      const { indexedDB, IDBKeyRange } = require("fake-indexeddb");
+      this.global.indexedDB = indexedDB;
+      this.global.IDBKeyRange = IDBKeyRange;
+    } catch {
+      // ignore if fake-indexeddb not loaded
+    }
   }
 }
 

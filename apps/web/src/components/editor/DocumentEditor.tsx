@@ -10,6 +10,7 @@ import LinkExtension from "@tiptap/extension-link";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
+import { IndexeddbPersistence } from "y-indexeddb";
 import EditorToolbar from "./EditorToolbar";
 import { CollaborationCursor } from "./collaboration-cursor";
 import { parseDocumentContent } from "@/lib/editor-utils";
@@ -57,6 +58,7 @@ export interface DocumentEditorProps {
 export default function DocumentEditor({
   document: initialDoc,
   collabConfig,
+  userId,
 }: DocumentEditorProps) {
   const router = useRouter();
 
@@ -72,12 +74,80 @@ export default function DocumentEditor({
   // Collaboration State
   const [collab, setCollab] = useState<{
     ydoc: Y.Doc;
-    provider: WebsocketProvider;
+    provider: WebsocketProvider | null;
     user: { id: string; name: string; color: string; role: string };
   } | null>(null);
   const [collabStatus, setCollabStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
   const [isSynced, setIsSynced] = useState(false);
   const [participants, setParticipants] = useState<ParticipantInfo[]>([]);
+
+  // Offline-first & Persistence States
+  const [isOnline, setIsOnline] = useState<boolean>(
+    () => (typeof navigator !== "undefined" ? navigator.onLine : true)
+  );
+  const [isLocalSynced, setIsLocalSynced] = useState<boolean>(false);
+  const [isStorageBlocked, setIsStorageBlocked] = useState<boolean>(false);
+  const [pendingSync, setPendingSync] = useState<boolean>(false);
+  const [showStatusDetails, setShowStatusDetails] = useState<boolean>(false);
+  const [manualOffline, setManualOffline] = useState<boolean>(false);
+
+  const collabStatusRef = useRef(collabStatus);
+  const isSyncedRef = useRef(isSynced);
+  const isOnlineRef = useRef(isOnline);
+  const manualOfflineRef = useRef(false);
+  const providerRef = useRef<WebsocketProvider | null>(null);
+
+  useEffect(() => {
+    collabStatusRef.current = collabStatus;
+  }, [collabStatus]);
+
+  useEffect(() => {
+    isSyncedRef.current = isSynced;
+  }, [isSynced]);
+
+  useEffect(() => {
+    isOnlineRef.current = isOnline;
+  }, [isOnline]);
+
+  useEffect(() => {
+    manualOfflineRef.current = manualOffline;
+  }, [manualOffline]);
+
+  const handleOnline = useCallback(() => {
+    manualOfflineRef.current = false;
+    setManualOffline(false);
+    setIsOnline(true);
+    setCollabStatus("connecting");
+    if (providerRef.current) {
+      try {
+        providerRef.current.connect();
+      } catch (err) {
+        console.warn("Reconnect error:", err);
+      }
+    }
+  }, []);
+
+  const handleOffline = useCallback(() => {
+    setIsOnline(false);
+    setCollabStatus("disconnected");
+    if (providerRef.current) {
+      try {
+        providerRef.current.disconnect();
+      } catch (err) {
+        console.warn("Disconnect error:", err);
+      }
+    }
+  }, []);
+
+  const toggleSimulatedOffline = useCallback(() => {
+    if (manualOfflineRef.current || !isOnlineRef.current) {
+      handleOnline();
+    } else {
+      manualOfflineRef.current = true;
+      setManualOffline(true);
+      handleOffline();
+    }
+  }, [handleOnline, handleOffline]);
 
   // Share Modal State
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -107,45 +177,127 @@ export default function DocumentEditor({
     initialDoc.userRole === "ADMIN" ||
     initialDoc.userRole === "MEMBER";
 
-  // Connect to Collaboration Server (Yjs + WebSockets)
+  // Connect to Collaboration Server (Yjs + WebSockets + IndexedDB)
   useEffect(() => {
     let isMounted = true;
-    let providerInstance: WebsocketProvider | null = null;
+    let idbInstance: IndexeddbPersistence | null = null;
     let ydocInstance: Y.Doc | null = null;
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", handleOnline);
+      window.addEventListener("offline", handleOffline);
+    }
+
+    // Polling timer to immediately catch Chrome DevTools Network "Offline" throttling
+    // which modifies navigator.onLine without reliably dispatching window offline events on localhost
+    const pollTimer = setInterval(() => {
+      if (typeof navigator !== "undefined" && isMounted) {
+        if (!navigator.onLine && isOnlineRef.current) {
+          handleOffline();
+        } else if (navigator.onLine && !isOnlineRef.current && !manualOfflineRef.current) {
+          handleOnline();
+        }
+      }
+    }, 300);
 
     async function initCollab() {
       try {
-        let config = collabConfig;
-        if (!config) {
-          const res = await fetch(`/api/documents/${initialDoc.id}/collab-token`);
-          if (!res.ok) {
-            throw new Error("Failed to authenticate collaboration session");
-          }
-          const data = await res.json();
-          config = {
-            serverUrl: data.serverUrl,
-            token: data.token,
-            user: data.user,
-          };
-        }
-        if (!isMounted || !config) return;
-
         const ydoc = new Y.Doc();
         ydocInstance = ydoc;
 
+        // 1. IndexedDB Persistence: cache updates locally across restarts/reloads
+        if (typeof window !== "undefined" && "indexedDB" in window && window.indexedDB) {
+          try {
+            const idb = new IndexeddbPersistence(`syncspace_doc_${initialDoc.id}`, ydoc);
+            idbInstance = idb;
+
+            idb.on("synced", () => {
+              if (isMounted) {
+                setIsLocalSynced(true);
+              }
+            });
+          } catch (storageErr) {
+            console.warn("IndexedDB persistence could not be initialized:", storageErr);
+            if (isMounted) setIsStorageBlocked(true);
+          }
+        }
+
+        // 2. Track local edits made while disconnected
+        ydoc.on("update", () => {
+          if (isMounted) {
+            if (collabStatusRef.current !== "connected" || !isSyncedRef.current) {
+              setPendingSync(true);
+            }
+          }
+        });
+
+        // 3. Resolve Collab Config & Token
+        let config = collabConfig;
+        if (!config && typeof window !== "undefined") {
+          try {
+            const res = await fetch(`/api/documents/${initialDoc.id}/collab-token`);
+            if (res.ok) {
+              const data = await res.json();
+              config = {
+                serverUrl: data.serverUrl,
+                token: data.token,
+                user: data.user,
+              };
+            }
+          } catch {
+            // Token fetch failed (offline)
+          }
+        }
+
+        const user = config?.user || {
+          id: userId,
+          name: "Anonymous",
+          color: "#6d5ae6",
+          role: initialDoc.userRole,
+        };
+
+        if (!config || !config.serverUrl) {
+          // Offline mode without server config: allow offline editing in ydoc!
+          if (isMounted) {
+            setCollab({
+              ydoc,
+              provider: null,
+              user,
+            });
+            setCollabStatus("disconnected");
+          }
+          return;
+        }
+
+        // 4. WebSocket Collaboration Provider
+        // disableBc: true ensures multi-user sync flows strictly through the authenticated server room
+        // and prevents tabs in the same browser from leaking updates while offline via BroadcastChannel
         const provider = new WebsocketProvider(
           config.serverUrl,
           initialDoc.id,
           ydoc,
-          { params: { token: config.token } }
+          { params: { token: config.token }, disableBc: true }
         );
-        providerInstance = provider;
+        providerRef.current = provider;
+
+        // If the browser is currently offline or manual offline mode is active, disconnect the socket immediately
+        if ((typeof navigator !== "undefined" && !navigator.onLine) || manualOfflineRef.current) {
+          try {
+            provider.disconnect();
+          } catch {
+            // ignore
+          }
+          if (isMounted) {
+            setCollabStatus("disconnected");
+            setIsOnline(false);
+          }
+        }
 
         // Configure user awareness
         provider.awareness.setLocalStateField("user", {
-          userId: config.user.id,
-          name: config.user.name,
-          color: config.user.color,
+          userId: user.id,
+          name: user.name,
+          color: user.color,
         });
 
         provider.on("status", ({ status }: { status: "connecting" | "connected" | "disconnected" }) => {
@@ -157,6 +309,7 @@ export default function DocumentEditor({
             setIsSynced(synced);
             if (synced) {
               setSaveStatus("saved");
+              setPendingSync(false);
               setLastSavedTime(new Date());
             }
           }
@@ -183,7 +336,7 @@ export default function DocumentEditor({
           setCollab({
             ydoc,
             provider,
-            user: config.user,
+            user,
           });
         }
       } catch (err) {
@@ -202,14 +355,23 @@ export default function DocumentEditor({
 
     return () => {
       isMounted = false;
-      if (providerInstance) {
-        providerInstance.destroy();
+      clearInterval(pollTimer);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+      }
+      if (providerRef.current) {
+        providerRef.current.destroy();
+        providerRef.current = null;
+      }
+      if (idbInstance) {
+        idbInstance.destroy().catch(() => {});
       }
       if (ydocInstance) {
         ydocInstance.destroy();
       }
     };
-  }, [initialDoc.id, collabConfig]);
+  }, [initialDoc.id, collabConfig, userId, initialDoc.userRole, handleOnline, handleOffline]);
 
   // TipTap Editor instance
   const editor = useEditor(
@@ -241,13 +403,17 @@ export default function DocumentEditor({
                 document: collab.ydoc,
                 field: "default",
               }),
-              CollaborationCursor.configure({
-                provider: collab.provider,
-                user: {
-                  name: collab.user.name,
-                  color: collab.user.color,
-                },
-              }),
+              ...(collab.provider
+                ? [
+                    CollaborationCursor.configure({
+                      provider: collab.provider,
+                      user: {
+                        name: collab.user.name,
+                        color: collab.user.color,
+                      },
+                    }),
+                  ]
+                : []),
             ]
           : []),
       ],
@@ -518,68 +684,198 @@ export default function DocumentEditor({
               </div>
             )}
 
-            {/* Real-time Sync & Save Status Badge */}
-            <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                saveStatus === "pending"
-                  ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
-                  : saveStatus === "saving"
-                  ? "bg-brand-500/10 text-brand-300 border-brand-500/20"
-                  : saveStatus === "failed"
-                  ? "bg-red-500/10 text-red-400 border-red-500/20"
-                  : collabStatus === "connected" && isSynced
-                  ? "bg-accent-500/10 text-accent-400 border-accent-500/20"
-                  : collabStatus === "connecting"
-                  ? "bg-brand-500/10 text-brand-300 border-brand-500/20"
-                  : "bg-accent-500/10 text-accent-400 border-accent-500/20"
-              }`}
-            >
-              {saveStatus === "pending" && (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  <span className="hidden sm:inline">Unsaved changes</span>
-                </>
-              )}
+            {/* Real-time Sync, Offline & Save Status Badge */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowStatusDetails((prev) => !prev)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                  isStorageBlocked
+                    ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
+                    : saveStatus === "pending"
+                    ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                    : saveStatus === "saving"
+                    ? "bg-brand-500/10 text-brand-300 border-brand-500/20"
+                    : saveStatus === "failed"
+                    ? "bg-red-500/10 text-red-400 border-red-500/20"
+                    : !isOnline || collabStatus === "disconnected"
+                    ? pendingSync
+                      ? "bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+                      : "bg-amber-500/10 text-amber-300 border-amber-500/20 hover:bg-amber-500/15"
+                    : collabStatus === "connecting"
+                    ? "bg-brand-500/10 text-brand-300 border-brand-500/20 hover:bg-brand-500/15"
+                    : collabStatus === "connected" && isSynced
+                    ? "bg-accent-500/10 text-accent-400 border-accent-500/20 hover:bg-accent-500/15"
+                    : "bg-accent-500/10 text-accent-400 border-accent-500/20"
+                }`}
+                title="Click to view detailed synchronization & persistence status"
+              >
+                {isStorageBlocked ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                    <span>Storage Blocked</span>
+                  </>
+                ) : saveStatus === "pending" ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="hidden sm:inline">Unsaved changes</span>
+                  </>
+                ) : saveStatus === "saving" ? (
+                  <>
+                    <svg className="animate-spin w-3 h-3 text-brand-400" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="hidden sm:inline">Saving...</span>
+                  </>
+                ) : saveStatus === "failed" ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                    <span>Failed</span>
+                  </div>
+                ) : !isOnline || collabStatus === "disconnected" ? (
+                  <>
+                    <svg className="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4l16 16" />
+                    </svg>
+                    <span className="hidden sm:inline">
+                      {pendingSync ? "Offline (Saved locally)" : "Offline"}
+                    </span>
+                  </>
+                ) : collabStatus === "connecting" ? (
+                  <>
+                    <svg className="animate-spin w-3 h-3 text-brand-400" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="hidden sm:inline">Connecting...</span>
+                  </>
+                ) : collabStatus === "connected" && isSynced ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent-400 animate-pulse" />
+                    <span className="hidden sm:inline">Live Sync</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent-400" />
+                    <span className="hidden sm:inline">Saved</span>
+                  </>
+                )}
+              </button>
 
-              {saveStatus === "saving" && (
-                <>
-                  <svg className="animate-spin w-3 h-3 text-brand-400" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <span className="hidden sm:inline">Saving...</span>
-                </>
-              )}
+              {/* Status Details Popover */}
+              {showStatusDetails && (
+                <div className="absolute right-0 top-full mt-2 w-72 p-3 bg-surface-1 border border-border-subtle rounded-xl shadow-2xl z-50 text-xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-border-subtle mb-2.5">
+                    <span className="font-semibold text-text-primary">Sync & Persistence State</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowStatusDetails(false)}
+                      className="text-text-muted hover:text-text-primary text-xs p-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
 
-              {saveStatus === "failed" && (
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                  <span>Failed</span>
+                  <div className="space-y-2.5">
+                    {/* Device Persistence (IndexedDB) */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-medium text-text-primary">Device Storage</div>
+                        <div className="text-[11px] text-text-secondary">
+                          {isStorageBlocked
+                            ? "IndexedDB blocked (private mode/quota)"
+                            : isLocalSynced
+                            ? "Saved locally in IndexedDB"
+                            : "Initializing local storage..."}
+                        </div>
+                      </div>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                          isStorageBlocked
+                            ? "bg-red-500/10 text-red-400"
+                            : isLocalSynced
+                            ? "bg-accent-500/10 text-accent-400"
+                            : "bg-brand-500/10 text-brand-300"
+                        }`}
+                      >
+                        {isStorageBlocked ? "Blocked" : isLocalSynced ? "Saved" : "Loading"}
+                      </span>
+                    </div>
+
+                    {/* Live Collaboration (WebSocket) */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-medium text-text-primary">Collaboration Sync</div>
+                        <div className="text-[11px] text-text-secondary">
+                          {collabStatus === "connected" && isSynced
+                            ? "Merged with active server room"
+                            : collabStatus === "connecting"
+                            ? "Connecting to server..."
+                            : "Disconnected (offline mode)"}
+                        </div>
+                      </div>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                          collabStatus === "connected" && isSynced
+                            ? "bg-accent-500/10 text-accent-400"
+                            : collabStatus === "connecting"
+                            ? "bg-brand-500/10 text-brand-300"
+                            : "bg-amber-500/10 text-amber-400"
+                        }`}
+                      >
+                        {collabStatus === "connected" && isSynced
+                          ? "In Sync"
+                          : collabStatus === "connecting"
+                          ? "Syncing"
+                          : "Offline"}
+                      </span>
+                    </div>
+
+                    {/* Cloud Database (PostgreSQL) */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-medium text-text-primary">Cloud Database</div>
+                        <div className="text-[11px] text-text-secondary">
+                          {collabStatus === "connected" && isSynced && !pendingSync
+                            ? "Durably persisted in PostgreSQL"
+                            : pendingSync
+                            ? "Queued locally; syncs on reconnect"
+                            : "Synchronized at last session"}
+                        </div>
+                      </div>
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                          collabStatus === "connected" && isSynced && !pendingSync
+                            ? "bg-accent-500/10 text-accent-400"
+                            : "bg-amber-500/10 text-amber-400"
+                        }`}
+                      >
+                        {collabStatus === "connected" && isSynced && !pendingSync
+                          ? "Persisted"
+                          : "Pending"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Manual Offline Disconnect / Reconnect Button */}
+                  <div className="pt-2 mt-2.5 border-t border-border-subtle">
+                    <button
+                      type="button"
+                      onClick={toggleSimulatedOffline}
+                      className={`w-full py-1.5 px-3 rounded text-[11px] font-semibold transition-colors border text-center cursor-pointer ${
+                        !isOnline || collabStatus === "disconnected" || manualOffline
+                          ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25"
+                          : "bg-surface-2 text-text-secondary border-border-subtle hover:bg-surface-3 hover:text-text-primary"
+                      }`}
+                    >
+                      {!isOnline || collabStatus === "disconnected" || manualOffline
+                        ? "⚡ Reconnect to Collaboration Server"
+                        : "🔌 Disconnect & Test Offline Mode"}
+                    </button>
+                  </div>
                 </div>
-              )}
-
-              {saveStatus === "saved" && (
-                <>
-                  {collabStatus === "connected" && isSynced ? (
-                    <>
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent-400" />
-                      <span className="hidden sm:inline">Live Sync</span>
-                    </>
-                  ) : collabStatus === "connecting" ? (
-                    <>
-                      <svg className="animate-spin w-3 h-3 text-brand-400" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      <span className="hidden sm:inline">Connecting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent-400" />
-                      <span className="hidden sm:inline">Saved</span>
-                    </>
-                  )}
-                </>
               )}
             </div>
 
@@ -649,6 +945,50 @@ export default function DocumentEditor({
         </div>
       )}
 
+      {/* Storage Warning Banner */}
+      {isStorageBlocked && (
+        <div className="bg-red-950/80 border-b border-red-500/30 px-4 py-2 text-xs text-red-200">
+          <div className="flex items-center gap-2 mx-auto max-w-6xl w-full">
+            <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="flex-1">
+              <strong>Storage Warning:</strong> Device IndexedDB is unavailable (private mode or quota exceeded). Local edits will not persist across browser refreshes until reconnected to server.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Offline Working Banner */}
+      {(!isOnline || collabStatus === "disconnected") && (
+        <div className="bg-amber-950/70 border-b border-amber-500/30 px-4 py-2 text-xs text-amber-200">
+          <div className="flex items-center justify-between mx-auto max-w-6xl w-full">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>
+                <strong>Working offline:</strong> Edits are saved locally to your device via IndexedDB and will automatically sync when reconnected.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {pendingSync && (
+                <span className="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded text-[11px] font-semibold border border-amber-500/30">
+                  Pending cloud sync
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={toggleSimulatedOffline}
+                className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-2.5 py-0.5 rounded text-[11px] font-medium border border-amber-500/40 transition-colors cursor-pointer"
+              >
+                Reconnect to Cloud
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Document Body */}
       <main className="flex-1 mx-auto max-w-4xl w-full px-4 sm:px-6 py-6 flex flex-col">
         {/* Document Metadata Pill */}
@@ -680,7 +1020,7 @@ export default function DocumentEditor({
               </>
             )}
           </div>
-          <div>Last saved {relativeTime(lastSavedTime.toISOString())}</div>
+          <div suppressHydrationWarning>Last saved {relativeTime(lastSavedTime.toISOString())}</div>
         </div>
 
         {/* TipTap Rich Text Editor Container */}

@@ -599,9 +599,9 @@ export default function DashboardView({
 
               {/* Card Footer: Metadata */}
               <div className="pt-4 mt-3 border-t border-border-subtle/60 flex items-center justify-between text-[11px] text-text-muted">
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5" suppressHydrationWarning>
                   <span className="w-1.5 h-1.5 rounded-full bg-accent-emerald" />
-                  <span>{relativeTime(doc.updatedAt)}</span>
+                  <span suppressHydrationWarning>{relativeTime(doc.updatedAt)}</span>
                 </span>
                 {doc.workspace?.name && (
                   <span className="bg-bg-surface px-2 py-0.5 rounded text-[10px] text-text-secondary border border-border-subtle truncate max-w-[120px]">

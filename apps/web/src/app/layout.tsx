@@ -44,6 +44,7 @@ export const metadata: Metadata = {
     description: "Offline-first collaborative document editor.",
   },
   robots: { index: true, follow: true },
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
@@ -54,6 +55,7 @@ export const viewport: Viewport = {
 };
 
 import SessionProvider from "@/components/SessionProvider";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -62,7 +64,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${jetbrainsMono.variable} h-full`}
     >
       <body className="min-h-dvh flex flex-col antialiased">
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          {children}
+          <ServiceWorkerRegister />
+        </SessionProvider>
       </body>
     </html>
   );
