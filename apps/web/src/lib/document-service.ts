@@ -6,7 +6,7 @@ import {
   verifyWorkspaceAccess,
 } from "./workspace-service";
 import type { DocumentQueryParams } from "./document-schemas";
-import type { Prisma } from "@syncspace/db";
+import type { Prisma, DocumentRole } from "@syncspace/db";
 
 export async function verifyDocumentAccess(
   documentId: string,
@@ -54,7 +54,10 @@ export async function verifyDocumentAccess(
       if (requiredRole === "OWNER" && wsAccess.role !== "OWNER") {
         throw new AuthorizationError("Only workspace or document owners can perform this operation");
       }
-      return { document, role: wsAccess.role };
+      return {
+        document,
+        role: wsAccess.role === "MEMBER" ? ("EDITOR" as const) : wsAccess.role,
+      };
     }
   }
 
@@ -191,11 +194,18 @@ export async function updateDocument(
     }
   }
 
+  // Prevent ordinary database last-write-wins saves from overwriting collaborative state:
+  // If the document has collaborative Yjs state, plain REST content overwrites are blocked
+  // to avoid wiping out concurrent collaborative updates in yjsState.
+  const yjsBytes = document.yjsState as Uint8Array | Buffer | null;
+  const isCollaborative = Boolean(yjsBytes && yjsBytes.length > 0);
+  const contentToUpdate = isCollaborative ? undefined : data.content;
+
   return prisma.document.update({
     where: { id: documentId },
     data: {
       ...(data.title !== undefined && { title: data.title.trim() }),
-      ...(data.content !== undefined && { content: data.content }),
+      ...(contentToUpdate !== undefined && { content: contentToUpdate }),
       ...(data.isArchived !== undefined && { isArchived: data.isArchived }),
       ...(data.isPublic !== undefined && { isPublic: data.isPublic }),
     },
@@ -229,5 +239,75 @@ export async function permanentDeleteDocument(documentId: string, userId: string
 
   return prisma.document.delete({
     where: { id: documentId },
+  });
+}
+
+export async function addDocumentCollaborator(
+  documentId: string,
+  requesterUserId: string,
+  email: string,
+  role: "EDITOR" | "VIEWER" = "EDITOR"
+) {
+  const { document, role: userRole } = await verifyDocumentAccess(
+    documentId,
+    requesterUserId,
+    "EDIT"
+  );
+  if (userRole !== "OWNER" && userRole !== "ADMIN" && userRole !== "EDITOR") {
+    throw new AuthorizationError("You do not have permission to invite collaborators");
+  }
+
+  const targetUser = await prisma.user.findUnique({
+    where: { email: email.toLowerCase() },
+    select: { id: true, name: true, email: true },
+  });
+
+  if (!targetUser) {
+    throw new NotFoundError(`No user found with email "${email}". Make sure they have registered an account.`);
+  }
+
+  if (targetUser.id === document.ownerId) {
+    throw new Error("This user is already the owner of this document");
+  }
+
+  const existingCollaborator = await prisma.collaborator.findUnique({
+    where: {
+      documentId_userId: {
+        documentId,
+        userId: targetUser.id,
+      },
+    },
+  });
+
+  if (existingCollaborator) {
+    return prisma.collaborator.update({
+      where: { id: existingCollaborator.id },
+      data: { role: role as DocumentRole },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+  }
+
+  return prisma.collaborator.create({
+    data: {
+      documentId,
+      userId: targetUser.id,
+      role: role as DocumentRole,
+    },
+    include: {
+      user: { select: { id: true, name: true, email: true, image: true } },
+    },
+  });
+}
+
+export async function getDocumentCollaborators(documentId: string, userId: string) {
+  await verifyDocumentAccess(documentId, userId, "VIEW");
+  return prisma.collaborator.findMany({
+    where: { documentId },
+    include: {
+      user: { select: { id: true, name: true, email: true, image: true } },
+    },
+    orderBy: { invitedAt: "asc" },
   });
 }

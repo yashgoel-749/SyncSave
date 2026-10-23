@@ -1,7 +1,11 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import * as http from 'http';
 import { WebSocketServer } from 'ws';
 import { setupWSConnection } from './yjsHandler';
 import { logger } from './logger';
+import { documentManager } from './documentManager';
 
 const PORT = parseInt(process.env.PORT ?? '1234', 10);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -55,8 +59,14 @@ server.listen(PORT, HOST, () => {
 });
 
 // Graceful shutdown
-const shutdown = (signal: string) => {
-  logger.info(`Received ${signal}, shutting down gracefully…`);
+const shutdown = async (signal: string) => {
+  logger.info(`Received ${signal}, flushing pending updates and shutting down gracefully…`);
+  try {
+    await documentManager.flushAll();
+  } catch (err) {
+    logger.error('Error flushing documents during shutdown:', err);
+  }
+
   wss.close(() => {
     server.close(() => {
       logger.info('Server closed. Bye!');

@@ -13,6 +13,7 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
     "@syncspace/db": "*",
+    "@tiptap/extension-collaboration": "^3.32.0",
     "@tiptap/extension-link": "^3.32.0",
     "@tiptap/extension-underline": "^3.32.0",
     "@tiptap/pm": "^3.32.0",
@@ -23,6 +24,8 @@
     "next-auth": "^5.0.0-beta.32",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "y-websocket": "^2.1.0",
+    "yjs": "^13.6.33",
     "zod": "^4.6.7"
   },
   "devDependencies": {

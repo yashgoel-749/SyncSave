@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import Link from "next/link";
 import { getDocument } from "@/lib/document-service";
 import { AuthorizationError, NotFoundError } from "@/lib/workspace-service";
+import { signCollabToken, getUserColor } from "@/lib/collab-token";
 import DocumentEditor from "@/components/editor/DocumentEditor";
 
 export const instant = false;
@@ -74,5 +75,34 @@ export default async function DocumentPage({
     userRole: doc.userRole,
   };
 
-  return <DocumentEditor document={serializedDoc} userId={session.user.id} />;
+  const userColor = getUserColor(session.user.id);
+  const collabToken = signCollabToken({
+    userId: session.user.id,
+    name: session.user.name || null,
+    email: session.user.email || "",
+    documentId: id,
+    role: doc.userRole as "OWNER" | "EDITOR" | "VIEWER",
+    color: userColor,
+    exp: new Date(doc.updatedAt).getTime() + 7 * 24 * 60 * 60 * 1000,
+  });
+
+  const collabConfig = {
+    token: collabToken,
+    serverUrl: process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:1234",
+    user: {
+      id: session.user.id,
+      name: session.user.name || session.user.email?.split("@")[0] || "Anonymous",
+      email: session.user.email || "",
+      color: userColor,
+      role: doc.userRole,
+    },
+  };
+
+  return (
+    <DocumentEditor
+      document={serializedDoc}
+      userId={session.user.id}
+      collabConfig={collabConfig}
+    />
+  );
 }

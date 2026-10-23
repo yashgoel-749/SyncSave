@@ -138,7 +138,7 @@ describe("DocumentEditor & EditorToolbar Components", () => {
       const titleInput = screen.getByDisplayValue("Project Architecture") as HTMLInputElement;
       expect(titleInput).not.toBeDisabled();
       expect(screen.getByText("OWNER")).toBeInTheDocument();
-      expect(screen.getByText("Saved")).toBeInTheDocument();
+      expect(screen.getByText(/Connecting\.\.\.|Live Sync|Saved/)).toBeInTheDocument();
       expect(screen.getByTestId("mock-prosemirror-canvas")).toBeInTheDocument();
     });
 

@@ -22,6 +22,15 @@ export const addWorkspaceMemberSchema = z.object({
   role: z.enum(["ADMIN", "MEMBER"]).default("MEMBER"),
 });
 
+export const addCollaboratorSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Please provide a valid email address"),
+  role: z.enum(["EDITOR", "VIEWER"]).default("EDITOR"),
+});
+
 export const createDocumentSchema = z.object({
   title: z
     .string()
@@ -55,6 +64,7 @@ export const documentQuerySchema = z.object({
 
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
 export type AddWorkspaceMemberInput = z.infer<typeof addWorkspaceMemberSchema>;
+export type AddCollaboratorInput = z.infer<typeof addCollaboratorSchema>;
 export type CreateDocumentInput = z.infer<typeof createDocumentSchema>;
 export type UpdateDocumentInput = z.infer<typeof updateDocumentSchema>;
 export type DocumentQueryParams = z.infer<typeof documentQuerySchema>;

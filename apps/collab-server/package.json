@@ -16,7 +16,9 @@
     "y-websocket": "^2.0.4",
     "yjs": "^13.6.20",
     "dotenv": "^16.4.5",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "@syncspace/db": "*",
+    "@tiptap/y-tiptap": "^3.0.10"
   },
   "devDependencies": {
     "@types/ws": "^8.5.12",
