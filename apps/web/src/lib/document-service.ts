@@ -279,26 +279,176 @@ export async function addDocumentCollaborator(
     },
   });
 
+  let collaborator;
   if (existingCollaborator) {
-    return prisma.collaborator.update({
+    collaborator = await prisma.collaborator.update({
       where: { id: existingCollaborator.id },
       data: { role: role as DocumentRole },
       include: {
         user: { select: { id: true, name: true, email: true, image: true } },
       },
     });
+  } else {
+    collaborator = await prisma.collaborator.create({
+      data: {
+        documentId,
+        userId: targetUser.id,
+        role: role as DocumentRole,
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
   }
 
-  return prisma.collaborator.create({
-    data: {
-      documentId,
+  // Create in-app notification
+  try {
+    const { createNotification } = await import("./notification-service");
+    await createNotification({
       userId: targetUser.id,
-      role: role as DocumentRole,
+      type: "DOCUMENT_INVITATION",
+      title: "Document Invitation",
+      message: `You were added as ${role.toLowerCase()} to "${document.title}".`,
+      data: { documentId, role },
+    });
+  } catch (err) {
+    console.warn("Failed to create in-app notification for added collaborator:", err);
+  }
+
+  return collaborator;
+}
+
+export async function updateCollaboratorRole(
+  documentId: string,
+  requesterUserId: string,
+  targetUserId: string,
+  newRole: "EDITOR" | "VIEWER"
+) {
+  const { document, role: userRole } = await verifyDocumentAccess(
+    documentId,
+    requesterUserId,
+    "EDIT"
+  );
+
+  if (userRole !== "OWNER" && userRole !== "ADMIN") {
+    throw new AuthorizationError("Only the document owner can change collaborator roles");
+  }
+
+  if (targetUserId === document.ownerId) {
+    throw new Error("Cannot change role of document owner");
+  }
+
+  const existing = await prisma.collaborator.findUnique({
+    where: {
+      documentId_userId: {
+        documentId,
+        userId: targetUserId,
+      },
     },
+  });
+
+  if (!existing) {
+    throw new NotFoundError("Collaborator not found");
+  }
+
+  const updated = await prisma.collaborator.update({
+    where: { id: existing.id },
+    data: { role: newRole as DocumentRole },
     include: {
       user: { select: { id: true, name: true, email: true, image: true } },
     },
   });
+
+  // Notify collaboration server to immediately update active WebSocket connection restrictions
+  try {
+    const { notifyCollabServerRoleUpdate } = await import("./collab-server-client");
+    await notifyCollabServerRoleUpdate(documentId, targetUserId, newRole);
+  } catch (err) {
+    console.warn("Failed to notify collab server of role change:", err);
+  }
+
+  // Send in-app notification to the collaborator
+  try {
+    const { createNotification } = await import("./notification-service");
+    await createNotification({
+      userId: targetUserId,
+      type: "ROLE_UPDATED",
+      title: "Role Updated",
+      message: `Your permission for "${document.title}" was changed to ${newRole.toLowerCase()}.`,
+      data: { documentId, role: newRole },
+    });
+  } catch (err) {
+    console.warn("Failed to create in-app notification for role update:", err);
+  }
+
+  return updated;
+}
+
+export async function removeDocumentCollaborator(
+  documentId: string,
+  requesterUserId: string,
+  targetUserId: string
+) {
+  const { document, role: userRole } = await verifyDocumentAccess(
+    documentId,
+    requesterUserId,
+    "VIEW"
+  );
+
+  // An owner/admin can remove any collaborator; a collaborator can remove themselves (leave)
+  const isOwnerOrAdmin = userRole === "OWNER" || userRole === "ADMIN";
+  const isSelf = requesterUserId === targetUserId;
+
+  if (!isOwnerOrAdmin && !isSelf) {
+    throw new AuthorizationError("You do not have permission to remove this collaborator");
+  }
+
+  if (targetUserId === document.ownerId) {
+    throw new Error("Cannot remove the owner of a document");
+  }
+
+  const existing = await prisma.collaborator.findUnique({
+    where: {
+      documentId_userId: {
+        documentId,
+        userId: targetUserId,
+      },
+    },
+  });
+
+  if (!existing) {
+    throw new NotFoundError("Collaborator not found");
+  }
+
+  await prisma.collaborator.delete({
+    where: { id: existing.id },
+  });
+
+  // Notify collab-server to immediately close active WebSockets for this user in this room
+  try {
+    const { notifyCollabServerRevoke } = await import("./collab-server-client");
+    await notifyCollabServerRevoke(documentId, targetUserId);
+  } catch (err) {
+    console.warn("Failed to notify collab server of permission revocation:", err);
+  }
+
+  // Send in-app notification if removed by someone else
+  if (!isSelf) {
+    try {
+      const { createNotification } = await import("./notification-service");
+      await createNotification({
+        userId: targetUserId,
+        type: "ACCESS_REVOKED",
+        title: "Access Revoked",
+        message: `Your access to "${document.title}" has been revoked.`,
+        data: { documentId },
+      });
+    } catch (err) {
+      console.warn("Failed to create in-app notification for access revocation:", err);
+    }
+  }
+
+  return { success: true };
 }
 
 export async function getDocumentCollaborators(documentId: string, userId: string) {
@@ -311,3 +461,4 @@ export async function getDocumentCollaborators(documentId: string, userId: strin
     orderBy: { invitedAt: "asc" },
   });
 }
+

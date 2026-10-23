@@ -3,9 +3,10 @@ dotenv.config();
 
 import * as http from 'http';
 import { WebSocketServer } from 'ws';
-import { setupWSConnection } from './yjsHandler';
+import { setupWSConnection, revokeUserConnections, updateUserRole } from './yjsHandler';
 import { logger } from './logger';
 import { documentManager } from './documentManager';
+import { getCollabSecret } from './auth';
 
 const PORT = parseInt(process.env.PORT ?? '1234', 10);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -15,13 +16,75 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? 'http://localhost:3000')
   .split(',')
   .map((o) => o.trim());
 
-const server = http.createServer((_req, res) => {
+const server = http.createServer((req, res) => {
   // Basic health-check endpoint
-  if (_req.url === '/health') {
+  if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
     return;
   }
+
+  // Internal permission revocation endpoint
+  const url = new URL(req.url || '', 'http://localhost');
+  const revokeMatch = url.pathname.match(/^\/internal\/rooms\/([^/]+)\/revoke$/);
+  const updateRoleMatch = url.pathname.match(/^\/internal\/rooms\/([^/]+)\/update-role$/);
+
+  if (req.method === 'POST' && (revokeMatch || updateRoleMatch)) {
+    const authHeader = req.headers.authorization;
+    const expectedSecret = getCollabSecret();
+    if (!authHeader || authHeader !== `Bearer ${expectedSecret}`) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const docId = decodeURIComponent((revokeMatch || updateRoleMatch)![1]);
+        const userId = payload.userId;
+
+        if (!docId || !userId) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Missing docId or userId' }));
+          return;
+        }
+
+        if (revokeMatch) {
+          const evicted = revokeUserConnections(docId, userId);
+          logger.info(`Internal revocation: evicted ${evicted} sockets for user ${userId} in ${docId}`);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, evicted }));
+          return;
+        }
+
+        if (updateRoleMatch) {
+          const role = payload.role;
+          if (role !== 'EDITOR' && role !== 'VIEWER') {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid role' }));
+            return;
+          }
+          const updated = updateUserRole(docId, userId, role);
+          logger.info(`Internal role update: updated ${updated} sockets for user ${userId} to ${role} in ${docId}`);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, updated }));
+          return;
+        }
+      } catch (err) {
+        logger.error('Error handling internal endpoint:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Internal server error' }));
+      }
+    });
+    return;
+  }
+
   res.writeHead(404);
   res.end();
 });

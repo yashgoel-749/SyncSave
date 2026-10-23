@@ -55,14 +55,31 @@ export async function POST(
       );
     }
 
-    const collaborator = await addDocumentCollaborator(
-      id,
-      session.user.id,
-      parsed.data.email,
-      parsed.data.role
-    );
+    const { createDocumentInvitation } = await import("@/lib/invitation-service");
+    const result = await createDocumentInvitation(id, session.user.id, {
+      email: parsed.data.email,
+      role: parsed.data.role,
+    });
 
-    return NextResponse.json({ collaborator }, { status: 201 });
+    let collaborator = null;
+    if (result.isExistingUser) {
+      collaborator = await addDocumentCollaborator(
+        id,
+        session.user.id,
+        parsed.data.email,
+        parsed.data.role
+      );
+    }
+
+    return NextResponse.json(
+      {
+        collaborator,
+        invitation: result.invitation,
+        inviteUrl: result.inviteUrl,
+        isExistingUser: result.isExistingUser,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     if (error instanceof AuthorizationError) {
       return NextResponse.json({ error: error.message }, { status: 403 });

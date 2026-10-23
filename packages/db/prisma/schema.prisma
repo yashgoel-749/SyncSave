@@ -35,6 +35,8 @@ model User {
   accounts          Account[]
   ownedWorkspaces   Workspace[]       @relation("WorkspaceOwner")
   workspaceMembers  WorkspaceMember[]
+  notifications     Notification[]    @relation("UserNotifications")
+  sentInvitations   DocumentInvitation[] @relation("InvitationsSent")
 
   @@index([email])
   @@map("users")
@@ -149,6 +151,7 @@ model Document {
   workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   collaborators Collaborator[]
+  invitations   DocumentInvitation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -175,4 +178,51 @@ model Collaborator {
   @@unique([documentId, userId])
   @@index([userId])
   @@map("collaborators")
+}
+
+// ── Document Invitations ──────────────────────────────────────────
+
+model DocumentInvitation {
+  id         String       @id @default(cuid())
+  documentId String
+  document   Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  email      String
+  role       DocumentRole @default(EDITOR)
+  token      String       @unique
+  inviterId  String
+  inviter    User         @relation("InvitationsSent", fields: [inviterId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@index([email])
+  @@index([documentId])
+  @@index([token])
+  @@map("document_invitations")
+}
+
+// ── Notifications ──────────────────────────────────────────────────
+
+enum NotificationType {
+  DOCUMENT_INVITATION
+  INVITATION_ACCEPTED
+  ROLE_UPDATED
+  ACCESS_REVOKED
+  WORKSPACE_EVENT
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?            // Metadata like { documentId, inviteToken, workspaceId, role } - never leaks document content
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
 }

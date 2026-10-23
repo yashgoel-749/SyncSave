@@ -20,7 +20,7 @@ jest.mock("@syncspace/db", () => {
 });
 
 import { signCollabToken } from "../auth";
-import { setupWSConnection } from "../yjsHandler";
+import { setupWSConnection, revokeUserConnections, updateUserRole } from "../yjsHandler";
 import { documentManager, prisma } from "../documentManager";
 
 describe("Real-time Collaboration & Synchronization Integration Tests", () => {
@@ -567,4 +567,87 @@ describe("Real-time Collaboration & Synchronization Integration Tests", () => {
       ydocB.destroy();
     });
   });
+
+  describe("Role-Based Restrictions & Permission Eviction", () => {
+    it("should immediately disconnect revoked user with code 4403 when permissions are revoked", (done) => {
+      const docId = "doc_revocation_test";
+      (prisma.document.findUnique as jest.Mock).mockResolvedValueOnce({
+        id: docId,
+        content: null,
+        yjsState: null,
+        deletedAt: null,
+      });
+
+      const token = signCollabToken({
+        userId: "usr_revoked",
+        name: "Revoked User",
+        email: "revoked@test.dev",
+        documentId: docId,
+        role: "EDITOR",
+        exp: Date.now() + 60000,
+      });
+
+      const ws = new WebSocket(`${serverUrl}/${docId}?token=${token}`);
+
+      ws.on("open", () => {
+        // Wait a small moment to ensure connection registration
+        setTimeout(() => {
+          // Trigger revocation on collab server
+          const count = revokeUserConnections(docId, "usr_revoked");
+          expect(count).toBeGreaterThanOrEqual(1);
+        }, 50);
+      });
+
+      ws.on("close", (code, reason) => {
+        expect(code).toBe(4403);
+        expect(reason.toString()).toContain("Permission revoked");
+        done();
+      });
+    });
+
+    it("should block document mutation attempts from a VIEWER connection", async () => {
+      const docId = "doc_viewer_restriction_test";
+      (prisma.document.findUnique as jest.Mock).mockResolvedValue({
+        id: docId,
+        content: null,
+        yjsState: null,
+        deletedAt: null,
+      });
+
+      const tokenViewer = signCollabToken({
+        userId: "usr_viewer_test",
+        name: "Viewer Val",
+        email: "val@test.dev",
+        documentId: docId,
+        role: "VIEWER",
+        exp: Date.now() + 60000,
+      });
+
+      const ydocViewer = new Y.Doc();
+      const providerViewer = new WebsocketProvider(serverUrl, docId, ydocViewer, {
+        params: { token: tokenViewer },
+      });
+
+      await new Promise<void>((resolve) => {
+        providerViewer.on("sync", (synced: boolean) => {
+          if (synced) resolve();
+        });
+      });
+
+      // Viewer attempts to write to the document
+      ydocViewer.getText("notes").insert(0, "Unauthorized Viewer Text!");
+
+      // Allow brief tick for message transmission to server
+      await new Promise((r) => setTimeout(r, 150));
+
+      // Assert server doc was NOT mutated by the viewer's write message
+      const serverDoc = documentManager.docs.get(docId);
+      const serverText = serverDoc ? serverDoc.getText("notes").toString() : "";
+      expect(serverText).not.toContain("Unauthorized Viewer Text!");
+
+      providerViewer.destroy();
+      ydocViewer.destroy();
+    });
+  });
 });
+

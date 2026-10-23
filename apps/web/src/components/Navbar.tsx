@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { LogoLink } from "@/components/Logo";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const NAV_LINKS = [
   { href: "/#features", label: "Features" },
@@ -47,6 +48,7 @@ export function Navbar() {
               <div className="h-8 w-20 bg-bg-card/50 rounded-lg animate-pulse" />
             ) : session?.user ? (
               <div className="flex items-center gap-3">
+                <NotificationBell />
                 <Link href="/dashboard" className="btn btn-ghost text-sm">
                   Dashboard
                 </Link>

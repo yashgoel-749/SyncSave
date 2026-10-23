@@ -62,9 +62,32 @@ export const documentQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
+export const updateCollaboratorSchema = z.object({
+  role: z.enum(["EDITOR", "VIEWER"], {
+    message: "Role must be EDITOR or VIEWER",
+  }),
+});
+
+export const inviteCollaboratorSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Please provide a valid email address"),
+  role: z.enum(["EDITOR", "VIEWER"]).default("EDITOR"),
+  expiresInDays: z.number().int().min(1).max(30).optional(),
+});
+
+export const acceptInviteSchema = z.object({
+  token: z.string().min(1, "Invitation token is required"),
+});
+
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
 export type AddWorkspaceMemberInput = z.infer<typeof addWorkspaceMemberSchema>;
 export type AddCollaboratorInput = z.infer<typeof addCollaboratorSchema>;
+export type UpdateCollaboratorInput = z.infer<typeof updateCollaboratorSchema>;
+export type InviteCollaboratorInput = z.infer<typeof inviteCollaboratorSchema>;
 export type CreateDocumentInput = z.infer<typeof createDocumentSchema>;
 export type UpdateDocumentInput = z.infer<typeof updateDocumentSchema>;
 export type DocumentQueryParams = z.infer<typeof documentQuerySchema>;
+

@@ -53,6 +53,16 @@ export type Document = $Result.DefaultSelection<Prisma.$DocumentPayload>
  * 
  */
 export type Collaborator = $Result.DefaultSelection<Prisma.$CollaboratorPayload>
+/**
+ * Model DocumentInvitation
+ * 
+ */
+export type DocumentInvitation = $Result.DefaultSelection<Prisma.$DocumentInvitationPayload>
+/**
+ * Model Notification
+ * 
+ */
+export type Notification = $Result.DefaultSelection<Prisma.$NotificationPayload>
 
 /**
  * Enums
@@ -75,6 +85,17 @@ export const DocumentRole: {
 
 export type DocumentRole = (typeof DocumentRole)[keyof typeof DocumentRole]
 
+
+export const NotificationType: {
+  DOCUMENT_INVITATION: 'DOCUMENT_INVITATION',
+  INVITATION_ACCEPTED: 'INVITATION_ACCEPTED',
+  ROLE_UPDATED: 'ROLE_UPDATED',
+  ACCESS_REVOKED: 'ACCESS_REVOKED',
+  WORKSPACE_EVENT: 'WORKSPACE_EVENT'
+};
+
+export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]
+
 }
 
 export type WorkspaceRole = $Enums.WorkspaceRole
@@ -84,6 +105,10 @@ export const WorkspaceRole: typeof $Enums.WorkspaceRole
 export type DocumentRole = $Enums.DocumentRole
 
 export const DocumentRole: typeof $Enums.DocumentRole
+
+export type NotificationType = $Enums.NotificationType
+
+export const NotificationType: typeof $Enums.NotificationType
 
 /**
  * ##  Prisma Client ʲˢ
@@ -287,6 +312,26 @@ export class PrismaClient<
     * ```
     */
   get collaborator(): Prisma.CollaboratorDelegate<ExtArgs>;
+
+  /**
+   * `prisma.documentInvitation`: Exposes CRUD operations for the **DocumentInvitation** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DocumentInvitations
+    * const documentInvitations = await prisma.documentInvitation.findMany()
+    * ```
+    */
+  get documentInvitation(): Prisma.DocumentInvitationDelegate<ExtArgs>;
+
+  /**
+   * `prisma.notification`: Exposes CRUD operations for the **Notification** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Notifications
+    * const notifications = await prisma.notification.findMany()
+    * ```
+    */
+  get notification(): Prisma.NotificationDelegate<ExtArgs>;
 }
 
 export namespace Prisma {
@@ -735,7 +780,9 @@ export namespace Prisma {
     Workspace: 'Workspace',
     WorkspaceMember: 'WorkspaceMember',
     Document: 'Document',
-    Collaborator: 'Collaborator'
+    Collaborator: 'Collaborator',
+    DocumentInvitation: 'DocumentInvitation',
+    Notification: 'Notification'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -751,7 +798,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "user" | "account" | "session" | "verificationToken" | "workspace" | "workspaceMember" | "document" | "collaborator"
+      modelProps: "user" | "account" | "session" | "verificationToken" | "workspace" | "workspaceMember" | "document" | "collaborator" | "documentInvitation" | "notification"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1315,6 +1362,146 @@ export namespace Prisma {
           }
         }
       }
+      DocumentInvitation: {
+        payload: Prisma.$DocumentInvitationPayload<ExtArgs>
+        fields: Prisma.DocumentInvitationFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DocumentInvitationFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DocumentInvitationFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload>
+          }
+          findFirst: {
+            args: Prisma.DocumentInvitationFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DocumentInvitationFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload>
+          }
+          findMany: {
+            args: Prisma.DocumentInvitationFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload>[]
+          }
+          create: {
+            args: Prisma.DocumentInvitationCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload>
+          }
+          createMany: {
+            args: Prisma.DocumentInvitationCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DocumentInvitationCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload>[]
+          }
+          delete: {
+            args: Prisma.DocumentInvitationDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload>
+          }
+          update: {
+            args: Prisma.DocumentInvitationUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload>
+          }
+          deleteMany: {
+            args: Prisma.DocumentInvitationDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DocumentInvitationUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.DocumentInvitationUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentInvitationPayload>
+          }
+          aggregate: {
+            args: Prisma.DocumentInvitationAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDocumentInvitation>
+          }
+          groupBy: {
+            args: Prisma.DocumentInvitationGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DocumentInvitationGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DocumentInvitationCountArgs<ExtArgs>
+            result: $Utils.Optional<DocumentInvitationCountAggregateOutputType> | number
+          }
+        }
+      }
+      Notification: {
+        payload: Prisma.$NotificationPayload<ExtArgs>
+        fields: Prisma.NotificationFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.NotificationFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.NotificationFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          findFirst: {
+            args: Prisma.NotificationFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.NotificationFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          findMany: {
+            args: Prisma.NotificationFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>[]
+          }
+          create: {
+            args: Prisma.NotificationCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          createMany: {
+            args: Prisma.NotificationCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.NotificationCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>[]
+          }
+          delete: {
+            args: Prisma.NotificationDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          update: {
+            args: Prisma.NotificationUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          deleteMany: {
+            args: Prisma.NotificationDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.NotificationUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.NotificationUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          aggregate: {
+            args: Prisma.NotificationAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateNotification>
+          }
+          groupBy: {
+            args: Prisma.NotificationGroupByArgs<ExtArgs>
+            result: $Utils.Optional<NotificationGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.NotificationCountArgs<ExtArgs>
+            result: $Utils.Optional<NotificationCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1482,6 +1669,8 @@ export namespace Prisma {
     accounts: number
     ownedWorkspaces: number
     workspaceMembers: number
+    notifications: number
+    sentInvitations: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -1491,6 +1680,8 @@ export namespace Prisma {
     accounts?: boolean | UserCountOutputTypeCountAccountsArgs
     ownedWorkspaces?: boolean | UserCountOutputTypeCountOwnedWorkspacesArgs
     workspaceMembers?: boolean | UserCountOutputTypeCountWorkspaceMembersArgs
+    notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
+    sentInvitations?: boolean | UserCountOutputTypeCountSentInvitationsArgs
   }
 
   // Custom InputTypes
@@ -1546,6 +1737,20 @@ export namespace Prisma {
     where?: WorkspaceMemberWhereInput
   }
 
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: NotificationWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountSentInvitationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DocumentInvitationWhereInput
+  }
+
 
   /**
    * Count Type WorkspaceCountOutputType
@@ -1593,10 +1798,12 @@ export namespace Prisma {
 
   export type DocumentCountOutputType = {
     collaborators: number
+    invitations: number
   }
 
   export type DocumentCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     collaborators?: boolean | DocumentCountOutputTypeCountCollaboratorsArgs
+    invitations?: boolean | DocumentCountOutputTypeCountInvitationsArgs
   }
 
   // Custom InputTypes
@@ -1615,6 +1822,13 @@ export namespace Prisma {
    */
   export type DocumentCountOutputTypeCountCollaboratorsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: CollaboratorWhereInput
+  }
+
+  /**
+   * DocumentCountOutputType without action
+   */
+  export type DocumentCountOutputTypeCountInvitationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DocumentInvitationWhereInput
   }
 
 
@@ -1816,6 +2030,8 @@ export namespace Prisma {
     accounts?: boolean | User$accountsArgs<ExtArgs>
     ownedWorkspaces?: boolean | User$ownedWorkspacesArgs<ExtArgs>
     workspaceMembers?: boolean | User$workspaceMembersArgs<ExtArgs>
+    notifications?: boolean | User$notificationsArgs<ExtArgs>
+    sentInvitations?: boolean | User$sentInvitationsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -1848,6 +2064,8 @@ export namespace Prisma {
     accounts?: boolean | User$accountsArgs<ExtArgs>
     ownedWorkspaces?: boolean | User$ownedWorkspacesArgs<ExtArgs>
     workspaceMembers?: boolean | User$workspaceMembersArgs<ExtArgs>
+    notifications?: boolean | User$notificationsArgs<ExtArgs>
+    sentInvitations?: boolean | User$sentInvitationsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1861,6 +2079,8 @@ export namespace Prisma {
       accounts: Prisma.$AccountPayload<ExtArgs>[]
       ownedWorkspaces: Prisma.$WorkspacePayload<ExtArgs>[]
       workspaceMembers: Prisma.$WorkspaceMemberPayload<ExtArgs>[]
+      notifications: Prisma.$NotificationPayload<ExtArgs>[]
+      sentInvitations: Prisma.$DocumentInvitationPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2241,6 +2461,8 @@ export namespace Prisma {
     accounts<T extends User$accountsArgs<ExtArgs> = {}>(args?: Subset<T, User$accountsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findMany"> | Null>
     ownedWorkspaces<T extends User$ownedWorkspacesArgs<ExtArgs> = {}>(args?: Subset<T, User$ownedWorkspacesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findMany"> | Null>
     workspaceMembers<T extends User$workspaceMembersArgs<ExtArgs> = {}>(args?: Subset<T, User$workspaceMembersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkspaceMemberPayload<ExtArgs>, T, "findMany"> | Null>
+    notifications<T extends User$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany"> | Null>
+    sentInvitations<T extends User$sentInvitationsArgs<ExtArgs> = {}>(args?: Subset<T, User$sentInvitationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2709,6 +2931,46 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: WorkspaceMemberScalarFieldEnum | WorkspaceMemberScalarFieldEnum[]
+  }
+
+  /**
+   * User.notifications
+   */
+  export type User$notificationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    where?: NotificationWhereInput
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    cursor?: NotificationWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+  /**
+   * User.sentInvitations
+   */
+  export type User$sentInvitationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    where?: DocumentInvitationWhereInput
+    orderBy?: DocumentInvitationOrderByWithRelationInput | DocumentInvitationOrderByWithRelationInput[]
+    cursor?: DocumentInvitationWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DocumentInvitationScalarFieldEnum | DocumentInvitationScalarFieldEnum[]
   }
 
   /**
@@ -7713,6 +7975,7 @@ export namespace Prisma {
     owner?: boolean | UserDefaultArgs<ExtArgs>
     workspace?: boolean | Document$workspaceArgs<ExtArgs>
     collaborators?: boolean | Document$collaboratorsArgs<ExtArgs>
+    invitations?: boolean | Document$invitationsArgs<ExtArgs>
     _count?: boolean | DocumentCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["document"]>
 
@@ -7750,6 +8013,7 @@ export namespace Prisma {
     owner?: boolean | UserDefaultArgs<ExtArgs>
     workspace?: boolean | Document$workspaceArgs<ExtArgs>
     collaborators?: boolean | Document$collaboratorsArgs<ExtArgs>
+    invitations?: boolean | Document$invitationsArgs<ExtArgs>
     _count?: boolean | DocumentCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type DocumentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7763,6 +8027,7 @@ export namespace Prisma {
       owner: Prisma.$UserPayload<ExtArgs>
       workspace: Prisma.$WorkspacePayload<ExtArgs> | null
       collaborators: Prisma.$CollaboratorPayload<ExtArgs>[]
+      invitations: Prisma.$DocumentInvitationPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -8143,6 +8408,7 @@ export namespace Prisma {
     owner<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     workspace<T extends Document$workspaceArgs<ExtArgs> = {}>(args?: Subset<T, Document$workspaceArgs<ExtArgs>>): Prisma__WorkspaceClient<$Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     collaborators<T extends Document$collaboratorsArgs<ExtArgs> = {}>(args?: Subset<T, Document$collaboratorsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CollaboratorPayload<ExtArgs>, T, "findMany"> | Null>
+    invitations<T extends Document$invitationsArgs<ExtArgs> = {}>(args?: Subset<T, Document$invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8533,6 +8799,26 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: CollaboratorScalarFieldEnum | CollaboratorScalarFieldEnum[]
+  }
+
+  /**
+   * Document.invitations
+   */
+  export type Document$invitationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    where?: DocumentInvitationWhereInput
+    orderBy?: DocumentInvitationOrderByWithRelationInput | DocumentInvitationOrderByWithRelationInput[]
+    cursor?: DocumentInvitationWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DocumentInvitationScalarFieldEnum | DocumentInvitationScalarFieldEnum[]
   }
 
   /**
@@ -9502,6 +9788,1958 @@ export namespace Prisma {
 
 
   /**
+   * Model DocumentInvitation
+   */
+
+  export type AggregateDocumentInvitation = {
+    _count: DocumentInvitationCountAggregateOutputType | null
+    _min: DocumentInvitationMinAggregateOutputType | null
+    _max: DocumentInvitationMaxAggregateOutputType | null
+  }
+
+  export type DocumentInvitationMinAggregateOutputType = {
+    id: string | null
+    documentId: string | null
+    email: string | null
+    role: $Enums.DocumentRole | null
+    token: string | null
+    inviterId: string | null
+    expiresAt: Date | null
+    acceptedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type DocumentInvitationMaxAggregateOutputType = {
+    id: string | null
+    documentId: string | null
+    email: string | null
+    role: $Enums.DocumentRole | null
+    token: string | null
+    inviterId: string | null
+    expiresAt: Date | null
+    acceptedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type DocumentInvitationCountAggregateOutputType = {
+    id: number
+    documentId: number
+    email: number
+    role: number
+    token: number
+    inviterId: number
+    expiresAt: number
+    acceptedAt: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type DocumentInvitationMinAggregateInputType = {
+    id?: true
+    documentId?: true
+    email?: true
+    role?: true
+    token?: true
+    inviterId?: true
+    expiresAt?: true
+    acceptedAt?: true
+    createdAt?: true
+  }
+
+  export type DocumentInvitationMaxAggregateInputType = {
+    id?: true
+    documentId?: true
+    email?: true
+    role?: true
+    token?: true
+    inviterId?: true
+    expiresAt?: true
+    acceptedAt?: true
+    createdAt?: true
+  }
+
+  export type DocumentInvitationCountAggregateInputType = {
+    id?: true
+    documentId?: true
+    email?: true
+    role?: true
+    token?: true
+    inviterId?: true
+    expiresAt?: true
+    acceptedAt?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type DocumentInvitationAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DocumentInvitation to aggregate.
+     */
+    where?: DocumentInvitationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DocumentInvitations to fetch.
+     */
+    orderBy?: DocumentInvitationOrderByWithRelationInput | DocumentInvitationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DocumentInvitationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DocumentInvitations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DocumentInvitations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DocumentInvitations
+    **/
+    _count?: true | DocumentInvitationCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DocumentInvitationMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DocumentInvitationMaxAggregateInputType
+  }
+
+  export type GetDocumentInvitationAggregateType<T extends DocumentInvitationAggregateArgs> = {
+        [P in keyof T & keyof AggregateDocumentInvitation]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDocumentInvitation[P]>
+      : GetScalarType<T[P], AggregateDocumentInvitation[P]>
+  }
+
+
+
+
+  export type DocumentInvitationGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DocumentInvitationWhereInput
+    orderBy?: DocumentInvitationOrderByWithAggregationInput | DocumentInvitationOrderByWithAggregationInput[]
+    by: DocumentInvitationScalarFieldEnum[] | DocumentInvitationScalarFieldEnum
+    having?: DocumentInvitationScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DocumentInvitationCountAggregateInputType | true
+    _min?: DocumentInvitationMinAggregateInputType
+    _max?: DocumentInvitationMaxAggregateInputType
+  }
+
+  export type DocumentInvitationGroupByOutputType = {
+    id: string
+    documentId: string
+    email: string
+    role: $Enums.DocumentRole
+    token: string
+    inviterId: string
+    expiresAt: Date
+    acceptedAt: Date | null
+    createdAt: Date
+    _count: DocumentInvitationCountAggregateOutputType | null
+    _min: DocumentInvitationMinAggregateOutputType | null
+    _max: DocumentInvitationMaxAggregateOutputType | null
+  }
+
+  type GetDocumentInvitationGroupByPayload<T extends DocumentInvitationGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DocumentInvitationGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DocumentInvitationGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DocumentInvitationGroupByOutputType[P]>
+            : GetScalarType<T[P], DocumentInvitationGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DocumentInvitationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    documentId?: boolean
+    email?: boolean
+    role?: boolean
+    token?: boolean
+    inviterId?: boolean
+    expiresAt?: boolean
+    acceptedAt?: boolean
+    createdAt?: boolean
+    document?: boolean | DocumentDefaultArgs<ExtArgs>
+    inviter?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["documentInvitation"]>
+
+  export type DocumentInvitationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    documentId?: boolean
+    email?: boolean
+    role?: boolean
+    token?: boolean
+    inviterId?: boolean
+    expiresAt?: boolean
+    acceptedAt?: boolean
+    createdAt?: boolean
+    document?: boolean | DocumentDefaultArgs<ExtArgs>
+    inviter?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["documentInvitation"]>
+
+  export type DocumentInvitationSelectScalar = {
+    id?: boolean
+    documentId?: boolean
+    email?: boolean
+    role?: boolean
+    token?: boolean
+    inviterId?: boolean
+    expiresAt?: boolean
+    acceptedAt?: boolean
+    createdAt?: boolean
+  }
+
+  export type DocumentInvitationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    document?: boolean | DocumentDefaultArgs<ExtArgs>
+    inviter?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type DocumentInvitationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    document?: boolean | DocumentDefaultArgs<ExtArgs>
+    inviter?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $DocumentInvitationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DocumentInvitation"
+    objects: {
+      document: Prisma.$DocumentPayload<ExtArgs>
+      inviter: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      documentId: string
+      email: string
+      role: $Enums.DocumentRole
+      token: string
+      inviterId: string
+      expiresAt: Date
+      acceptedAt: Date | null
+      createdAt: Date
+    }, ExtArgs["result"]["documentInvitation"]>
+    composites: {}
+  }
+
+  type DocumentInvitationGetPayload<S extends boolean | null | undefined | DocumentInvitationDefaultArgs> = $Result.GetResult<Prisma.$DocumentInvitationPayload, S>
+
+  type DocumentInvitationCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<DocumentInvitationFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: DocumentInvitationCountAggregateInputType | true
+    }
+
+  export interface DocumentInvitationDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DocumentInvitation'], meta: { name: 'DocumentInvitation' } }
+    /**
+     * Find zero or one DocumentInvitation that matches the filter.
+     * @param {DocumentInvitationFindUniqueArgs} args - Arguments to find a DocumentInvitation
+     * @example
+     * // Get one DocumentInvitation
+     * const documentInvitation = await prisma.documentInvitation.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DocumentInvitationFindUniqueArgs>(args: SelectSubset<T, DocumentInvitationFindUniqueArgs<ExtArgs>>): Prisma__DocumentInvitationClient<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one DocumentInvitation that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {DocumentInvitationFindUniqueOrThrowArgs} args - Arguments to find a DocumentInvitation
+     * @example
+     * // Get one DocumentInvitation
+     * const documentInvitation = await prisma.documentInvitation.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DocumentInvitationFindUniqueOrThrowArgs>(args: SelectSubset<T, DocumentInvitationFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DocumentInvitationClient<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first DocumentInvitation that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentInvitationFindFirstArgs} args - Arguments to find a DocumentInvitation
+     * @example
+     * // Get one DocumentInvitation
+     * const documentInvitation = await prisma.documentInvitation.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DocumentInvitationFindFirstArgs>(args?: SelectSubset<T, DocumentInvitationFindFirstArgs<ExtArgs>>): Prisma__DocumentInvitationClient<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first DocumentInvitation that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentInvitationFindFirstOrThrowArgs} args - Arguments to find a DocumentInvitation
+     * @example
+     * // Get one DocumentInvitation
+     * const documentInvitation = await prisma.documentInvitation.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DocumentInvitationFindFirstOrThrowArgs>(args?: SelectSubset<T, DocumentInvitationFindFirstOrThrowArgs<ExtArgs>>): Prisma__DocumentInvitationClient<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more DocumentInvitations that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentInvitationFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DocumentInvitations
+     * const documentInvitations = await prisma.documentInvitation.findMany()
+     * 
+     * // Get first 10 DocumentInvitations
+     * const documentInvitations = await prisma.documentInvitation.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const documentInvitationWithIdOnly = await prisma.documentInvitation.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DocumentInvitationFindManyArgs>(args?: SelectSubset<T, DocumentInvitationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a DocumentInvitation.
+     * @param {DocumentInvitationCreateArgs} args - Arguments to create a DocumentInvitation.
+     * @example
+     * // Create one DocumentInvitation
+     * const DocumentInvitation = await prisma.documentInvitation.create({
+     *   data: {
+     *     // ... data to create a DocumentInvitation
+     *   }
+     * })
+     * 
+     */
+    create<T extends DocumentInvitationCreateArgs>(args: SelectSubset<T, DocumentInvitationCreateArgs<ExtArgs>>): Prisma__DocumentInvitationClient<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many DocumentInvitations.
+     * @param {DocumentInvitationCreateManyArgs} args - Arguments to create many DocumentInvitations.
+     * @example
+     * // Create many DocumentInvitations
+     * const documentInvitation = await prisma.documentInvitation.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DocumentInvitationCreateManyArgs>(args?: SelectSubset<T, DocumentInvitationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many DocumentInvitations and returns the data saved in the database.
+     * @param {DocumentInvitationCreateManyAndReturnArgs} args - Arguments to create many DocumentInvitations.
+     * @example
+     * // Create many DocumentInvitations
+     * const documentInvitation = await prisma.documentInvitation.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many DocumentInvitations and only return the `id`
+     * const documentInvitationWithIdOnly = await prisma.documentInvitation.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DocumentInvitationCreateManyAndReturnArgs>(args?: SelectSubset<T, DocumentInvitationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a DocumentInvitation.
+     * @param {DocumentInvitationDeleteArgs} args - Arguments to delete one DocumentInvitation.
+     * @example
+     * // Delete one DocumentInvitation
+     * const DocumentInvitation = await prisma.documentInvitation.delete({
+     *   where: {
+     *     // ... filter to delete one DocumentInvitation
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DocumentInvitationDeleteArgs>(args: SelectSubset<T, DocumentInvitationDeleteArgs<ExtArgs>>): Prisma__DocumentInvitationClient<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one DocumentInvitation.
+     * @param {DocumentInvitationUpdateArgs} args - Arguments to update one DocumentInvitation.
+     * @example
+     * // Update one DocumentInvitation
+     * const documentInvitation = await prisma.documentInvitation.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DocumentInvitationUpdateArgs>(args: SelectSubset<T, DocumentInvitationUpdateArgs<ExtArgs>>): Prisma__DocumentInvitationClient<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more DocumentInvitations.
+     * @param {DocumentInvitationDeleteManyArgs} args - Arguments to filter DocumentInvitations to delete.
+     * @example
+     * // Delete a few DocumentInvitations
+     * const { count } = await prisma.documentInvitation.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DocumentInvitationDeleteManyArgs>(args?: SelectSubset<T, DocumentInvitationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DocumentInvitations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentInvitationUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DocumentInvitations
+     * const documentInvitation = await prisma.documentInvitation.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DocumentInvitationUpdateManyArgs>(args: SelectSubset<T, DocumentInvitationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one DocumentInvitation.
+     * @param {DocumentInvitationUpsertArgs} args - Arguments to update or create a DocumentInvitation.
+     * @example
+     * // Update or create a DocumentInvitation
+     * const documentInvitation = await prisma.documentInvitation.upsert({
+     *   create: {
+     *     // ... data to create a DocumentInvitation
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DocumentInvitation we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DocumentInvitationUpsertArgs>(args: SelectSubset<T, DocumentInvitationUpsertArgs<ExtArgs>>): Prisma__DocumentInvitationClient<$Result.GetResult<Prisma.$DocumentInvitationPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of DocumentInvitations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentInvitationCountArgs} args - Arguments to filter DocumentInvitations to count.
+     * @example
+     * // Count the number of DocumentInvitations
+     * const count = await prisma.documentInvitation.count({
+     *   where: {
+     *     // ... the filter for the DocumentInvitations we want to count
+     *   }
+     * })
+    **/
+    count<T extends DocumentInvitationCountArgs>(
+      args?: Subset<T, DocumentInvitationCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DocumentInvitationCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DocumentInvitation.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentInvitationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DocumentInvitationAggregateArgs>(args: Subset<T, DocumentInvitationAggregateArgs>): Prisma.PrismaPromise<GetDocumentInvitationAggregateType<T>>
+
+    /**
+     * Group by DocumentInvitation.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentInvitationGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DocumentInvitationGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DocumentInvitationGroupByArgs['orderBy'] }
+        : { orderBy?: DocumentInvitationGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DocumentInvitationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDocumentInvitationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DocumentInvitation model
+   */
+  readonly fields: DocumentInvitationFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DocumentInvitation.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DocumentInvitationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    document<T extends DocumentDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DocumentDefaultArgs<ExtArgs>>): Prisma__DocumentClient<$Result.GetResult<Prisma.$DocumentPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    inviter<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DocumentInvitation model
+   */ 
+  interface DocumentInvitationFieldRefs {
+    readonly id: FieldRef<"DocumentInvitation", 'String'>
+    readonly documentId: FieldRef<"DocumentInvitation", 'String'>
+    readonly email: FieldRef<"DocumentInvitation", 'String'>
+    readonly role: FieldRef<"DocumentInvitation", 'DocumentRole'>
+    readonly token: FieldRef<"DocumentInvitation", 'String'>
+    readonly inviterId: FieldRef<"DocumentInvitation", 'String'>
+    readonly expiresAt: FieldRef<"DocumentInvitation", 'DateTime'>
+    readonly acceptedAt: FieldRef<"DocumentInvitation", 'DateTime'>
+    readonly createdAt: FieldRef<"DocumentInvitation", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DocumentInvitation findUnique
+   */
+  export type DocumentInvitationFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentInvitation to fetch.
+     */
+    where: DocumentInvitationWhereUniqueInput
+  }
+
+  /**
+   * DocumentInvitation findUniqueOrThrow
+   */
+  export type DocumentInvitationFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentInvitation to fetch.
+     */
+    where: DocumentInvitationWhereUniqueInput
+  }
+
+  /**
+   * DocumentInvitation findFirst
+   */
+  export type DocumentInvitationFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentInvitation to fetch.
+     */
+    where?: DocumentInvitationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DocumentInvitations to fetch.
+     */
+    orderBy?: DocumentInvitationOrderByWithRelationInput | DocumentInvitationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DocumentInvitations.
+     */
+    cursor?: DocumentInvitationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DocumentInvitations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DocumentInvitations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DocumentInvitations.
+     */
+    distinct?: DocumentInvitationScalarFieldEnum | DocumentInvitationScalarFieldEnum[]
+  }
+
+  /**
+   * DocumentInvitation findFirstOrThrow
+   */
+  export type DocumentInvitationFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentInvitation to fetch.
+     */
+    where?: DocumentInvitationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DocumentInvitations to fetch.
+     */
+    orderBy?: DocumentInvitationOrderByWithRelationInput | DocumentInvitationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DocumentInvitations.
+     */
+    cursor?: DocumentInvitationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DocumentInvitations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DocumentInvitations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DocumentInvitations.
+     */
+    distinct?: DocumentInvitationScalarFieldEnum | DocumentInvitationScalarFieldEnum[]
+  }
+
+  /**
+   * DocumentInvitation findMany
+   */
+  export type DocumentInvitationFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentInvitations to fetch.
+     */
+    where?: DocumentInvitationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DocumentInvitations to fetch.
+     */
+    orderBy?: DocumentInvitationOrderByWithRelationInput | DocumentInvitationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DocumentInvitations.
+     */
+    cursor?: DocumentInvitationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DocumentInvitations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DocumentInvitations.
+     */
+    skip?: number
+    distinct?: DocumentInvitationScalarFieldEnum | DocumentInvitationScalarFieldEnum[]
+  }
+
+  /**
+   * DocumentInvitation create
+   */
+  export type DocumentInvitationCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    /**
+     * The data needed to create a DocumentInvitation.
+     */
+    data: XOR<DocumentInvitationCreateInput, DocumentInvitationUncheckedCreateInput>
+  }
+
+  /**
+   * DocumentInvitation createMany
+   */
+  export type DocumentInvitationCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DocumentInvitations.
+     */
+    data: DocumentInvitationCreateManyInput | DocumentInvitationCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DocumentInvitation createManyAndReturn
+   */
+  export type DocumentInvitationCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many DocumentInvitations.
+     */
+    data: DocumentInvitationCreateManyInput | DocumentInvitationCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DocumentInvitation update
+   */
+  export type DocumentInvitationUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    /**
+     * The data needed to update a DocumentInvitation.
+     */
+    data: XOR<DocumentInvitationUpdateInput, DocumentInvitationUncheckedUpdateInput>
+    /**
+     * Choose, which DocumentInvitation to update.
+     */
+    where: DocumentInvitationWhereUniqueInput
+  }
+
+  /**
+   * DocumentInvitation updateMany
+   */
+  export type DocumentInvitationUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DocumentInvitations.
+     */
+    data: XOR<DocumentInvitationUpdateManyMutationInput, DocumentInvitationUncheckedUpdateManyInput>
+    /**
+     * Filter which DocumentInvitations to update
+     */
+    where?: DocumentInvitationWhereInput
+  }
+
+  /**
+   * DocumentInvitation upsert
+   */
+  export type DocumentInvitationUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    /**
+     * The filter to search for the DocumentInvitation to update in case it exists.
+     */
+    where: DocumentInvitationWhereUniqueInput
+    /**
+     * In case the DocumentInvitation found by the `where` argument doesn't exist, create a new DocumentInvitation with this data.
+     */
+    create: XOR<DocumentInvitationCreateInput, DocumentInvitationUncheckedCreateInput>
+    /**
+     * In case the DocumentInvitation was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DocumentInvitationUpdateInput, DocumentInvitationUncheckedUpdateInput>
+  }
+
+  /**
+   * DocumentInvitation delete
+   */
+  export type DocumentInvitationDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+    /**
+     * Filter which DocumentInvitation to delete.
+     */
+    where: DocumentInvitationWhereUniqueInput
+  }
+
+  /**
+   * DocumentInvitation deleteMany
+   */
+  export type DocumentInvitationDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DocumentInvitations to delete
+     */
+    where?: DocumentInvitationWhereInput
+  }
+
+  /**
+   * DocumentInvitation without action
+   */
+  export type DocumentInvitationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentInvitation
+     */
+    select?: DocumentInvitationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentInvitationInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Notification
+   */
+
+  export type AggregateNotification = {
+    _count: NotificationCountAggregateOutputType | null
+    _min: NotificationMinAggregateOutputType | null
+    _max: NotificationMaxAggregateOutputType | null
+  }
+
+  export type NotificationMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    type: $Enums.NotificationType | null
+    title: string | null
+    message: string | null
+    isRead: boolean | null
+    createdAt: Date | null
+  }
+
+  export type NotificationMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    type: $Enums.NotificationType | null
+    title: string | null
+    message: string | null
+    isRead: boolean | null
+    createdAt: Date | null
+  }
+
+  export type NotificationCountAggregateOutputType = {
+    id: number
+    userId: number
+    type: number
+    title: number
+    message: number
+    data: number
+    isRead: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type NotificationMinAggregateInputType = {
+    id?: true
+    userId?: true
+    type?: true
+    title?: true
+    message?: true
+    isRead?: true
+    createdAt?: true
+  }
+
+  export type NotificationMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    type?: true
+    title?: true
+    message?: true
+    isRead?: true
+    createdAt?: true
+  }
+
+  export type NotificationCountAggregateInputType = {
+    id?: true
+    userId?: true
+    type?: true
+    title?: true
+    message?: true
+    data?: true
+    isRead?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type NotificationAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Notification to aggregate.
+     */
+    where?: NotificationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Notifications to fetch.
+     */
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: NotificationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Notifications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Notifications.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Notifications
+    **/
+    _count?: true | NotificationCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: NotificationMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: NotificationMaxAggregateInputType
+  }
+
+  export type GetNotificationAggregateType<T extends NotificationAggregateArgs> = {
+        [P in keyof T & keyof AggregateNotification]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateNotification[P]>
+      : GetScalarType<T[P], AggregateNotification[P]>
+  }
+
+
+
+
+  export type NotificationGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: NotificationWhereInput
+    orderBy?: NotificationOrderByWithAggregationInput | NotificationOrderByWithAggregationInput[]
+    by: NotificationScalarFieldEnum[] | NotificationScalarFieldEnum
+    having?: NotificationScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: NotificationCountAggregateInputType | true
+    _min?: NotificationMinAggregateInputType
+    _max?: NotificationMaxAggregateInputType
+  }
+
+  export type NotificationGroupByOutputType = {
+    id: string
+    userId: string
+    type: $Enums.NotificationType
+    title: string
+    message: string
+    data: JsonValue | null
+    isRead: boolean
+    createdAt: Date
+    _count: NotificationCountAggregateOutputType | null
+    _min: NotificationMinAggregateOutputType | null
+    _max: NotificationMaxAggregateOutputType | null
+  }
+
+  type GetNotificationGroupByPayload<T extends NotificationGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<NotificationGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof NotificationGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], NotificationGroupByOutputType[P]>
+            : GetScalarType<T[P], NotificationGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type NotificationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    type?: boolean
+    title?: boolean
+    message?: boolean
+    data?: boolean
+    isRead?: boolean
+    createdAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["notification"]>
+
+  export type NotificationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    type?: boolean
+    title?: boolean
+    message?: boolean
+    data?: boolean
+    isRead?: boolean
+    createdAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["notification"]>
+
+  export type NotificationSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    type?: boolean
+    title?: boolean
+    message?: boolean
+    data?: boolean
+    isRead?: boolean
+    createdAt?: boolean
+  }
+
+  export type NotificationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type NotificationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $NotificationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Notification"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      type: $Enums.NotificationType
+      title: string
+      message: string
+      data: Prisma.JsonValue | null
+      isRead: boolean
+      createdAt: Date
+    }, ExtArgs["result"]["notification"]>
+    composites: {}
+  }
+
+  type NotificationGetPayload<S extends boolean | null | undefined | NotificationDefaultArgs> = $Result.GetResult<Prisma.$NotificationPayload, S>
+
+  type NotificationCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<NotificationFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: NotificationCountAggregateInputType | true
+    }
+
+  export interface NotificationDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Notification'], meta: { name: 'Notification' } }
+    /**
+     * Find zero or one Notification that matches the filter.
+     * @param {NotificationFindUniqueArgs} args - Arguments to find a Notification
+     * @example
+     * // Get one Notification
+     * const notification = await prisma.notification.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends NotificationFindUniqueArgs>(args: SelectSubset<T, NotificationFindUniqueArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one Notification that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {NotificationFindUniqueOrThrowArgs} args - Arguments to find a Notification
+     * @example
+     * // Get one Notification
+     * const notification = await prisma.notification.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends NotificationFindUniqueOrThrowArgs>(args: SelectSubset<T, NotificationFindUniqueOrThrowArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first Notification that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationFindFirstArgs} args - Arguments to find a Notification
+     * @example
+     * // Get one Notification
+     * const notification = await prisma.notification.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends NotificationFindFirstArgs>(args?: SelectSubset<T, NotificationFindFirstArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first Notification that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationFindFirstOrThrowArgs} args - Arguments to find a Notification
+     * @example
+     * // Get one Notification
+     * const notification = await prisma.notification.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends NotificationFindFirstOrThrowArgs>(args?: SelectSubset<T, NotificationFindFirstOrThrowArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more Notifications that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Notifications
+     * const notifications = await prisma.notification.findMany()
+     * 
+     * // Get first 10 Notifications
+     * const notifications = await prisma.notification.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const notificationWithIdOnly = await prisma.notification.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends NotificationFindManyArgs>(args?: SelectSubset<T, NotificationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a Notification.
+     * @param {NotificationCreateArgs} args - Arguments to create a Notification.
+     * @example
+     * // Create one Notification
+     * const Notification = await prisma.notification.create({
+     *   data: {
+     *     // ... data to create a Notification
+     *   }
+     * })
+     * 
+     */
+    create<T extends NotificationCreateArgs>(args: SelectSubset<T, NotificationCreateArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many Notifications.
+     * @param {NotificationCreateManyArgs} args - Arguments to create many Notifications.
+     * @example
+     * // Create many Notifications
+     * const notification = await prisma.notification.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends NotificationCreateManyArgs>(args?: SelectSubset<T, NotificationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Notifications and returns the data saved in the database.
+     * @param {NotificationCreateManyAndReturnArgs} args - Arguments to create many Notifications.
+     * @example
+     * // Create many Notifications
+     * const notification = await prisma.notification.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Notifications and only return the `id`
+     * const notificationWithIdOnly = await prisma.notification.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends NotificationCreateManyAndReturnArgs>(args?: SelectSubset<T, NotificationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a Notification.
+     * @param {NotificationDeleteArgs} args - Arguments to delete one Notification.
+     * @example
+     * // Delete one Notification
+     * const Notification = await prisma.notification.delete({
+     *   where: {
+     *     // ... filter to delete one Notification
+     *   }
+     * })
+     * 
+     */
+    delete<T extends NotificationDeleteArgs>(args: SelectSubset<T, NotificationDeleteArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one Notification.
+     * @param {NotificationUpdateArgs} args - Arguments to update one Notification.
+     * @example
+     * // Update one Notification
+     * const notification = await prisma.notification.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends NotificationUpdateArgs>(args: SelectSubset<T, NotificationUpdateArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more Notifications.
+     * @param {NotificationDeleteManyArgs} args - Arguments to filter Notifications to delete.
+     * @example
+     * // Delete a few Notifications
+     * const { count } = await prisma.notification.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends NotificationDeleteManyArgs>(args?: SelectSubset<T, NotificationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Notifications.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Notifications
+     * const notification = await prisma.notification.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends NotificationUpdateManyArgs>(args: SelectSubset<T, NotificationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Notification.
+     * @param {NotificationUpsertArgs} args - Arguments to update or create a Notification.
+     * @example
+     * // Update or create a Notification
+     * const notification = await prisma.notification.upsert({
+     *   create: {
+     *     // ... data to create a Notification
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Notification we want to update
+     *   }
+     * })
+     */
+    upsert<T extends NotificationUpsertArgs>(args: SelectSubset<T, NotificationUpsertArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of Notifications.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationCountArgs} args - Arguments to filter Notifications to count.
+     * @example
+     * // Count the number of Notifications
+     * const count = await prisma.notification.count({
+     *   where: {
+     *     // ... the filter for the Notifications we want to count
+     *   }
+     * })
+    **/
+    count<T extends NotificationCountArgs>(
+      args?: Subset<T, NotificationCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], NotificationCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Notification.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends NotificationAggregateArgs>(args: Subset<T, NotificationAggregateArgs>): Prisma.PrismaPromise<GetNotificationAggregateType<T>>
+
+    /**
+     * Group by Notification.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends NotificationGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: NotificationGroupByArgs['orderBy'] }
+        : { orderBy?: NotificationGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, NotificationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetNotificationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Notification model
+   */
+  readonly fields: NotificationFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Notification.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__NotificationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Notification model
+   */ 
+  interface NotificationFieldRefs {
+    readonly id: FieldRef<"Notification", 'String'>
+    readonly userId: FieldRef<"Notification", 'String'>
+    readonly type: FieldRef<"Notification", 'NotificationType'>
+    readonly title: FieldRef<"Notification", 'String'>
+    readonly message: FieldRef<"Notification", 'String'>
+    readonly data: FieldRef<"Notification", 'Json'>
+    readonly isRead: FieldRef<"Notification", 'Boolean'>
+    readonly createdAt: FieldRef<"Notification", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Notification findUnique
+   */
+  export type NotificationFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notification to fetch.
+     */
+    where: NotificationWhereUniqueInput
+  }
+
+  /**
+   * Notification findUniqueOrThrow
+   */
+  export type NotificationFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notification to fetch.
+     */
+    where: NotificationWhereUniqueInput
+  }
+
+  /**
+   * Notification findFirst
+   */
+  export type NotificationFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notification to fetch.
+     */
+    where?: NotificationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Notifications to fetch.
+     */
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Notifications.
+     */
+    cursor?: NotificationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Notifications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Notifications.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Notifications.
+     */
+    distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+  /**
+   * Notification findFirstOrThrow
+   */
+  export type NotificationFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notification to fetch.
+     */
+    where?: NotificationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Notifications to fetch.
+     */
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Notifications.
+     */
+    cursor?: NotificationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Notifications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Notifications.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Notifications.
+     */
+    distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+  /**
+   * Notification findMany
+   */
+  export type NotificationFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notifications to fetch.
+     */
+    where?: NotificationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Notifications to fetch.
+     */
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Notifications.
+     */
+    cursor?: NotificationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Notifications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Notifications.
+     */
+    skip?: number
+    distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+  /**
+   * Notification create
+   */
+  export type NotificationCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Notification.
+     */
+    data: XOR<NotificationCreateInput, NotificationUncheckedCreateInput>
+  }
+
+  /**
+   * Notification createMany
+   */
+  export type NotificationCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Notifications.
+     */
+    data: NotificationCreateManyInput | NotificationCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Notification createManyAndReturn
+   */
+  export type NotificationCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many Notifications.
+     */
+    data: NotificationCreateManyInput | NotificationCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Notification update
+   */
+  export type NotificationUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Notification.
+     */
+    data: XOR<NotificationUpdateInput, NotificationUncheckedUpdateInput>
+    /**
+     * Choose, which Notification to update.
+     */
+    where: NotificationWhereUniqueInput
+  }
+
+  /**
+   * Notification updateMany
+   */
+  export type NotificationUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Notifications.
+     */
+    data: XOR<NotificationUpdateManyMutationInput, NotificationUncheckedUpdateManyInput>
+    /**
+     * Filter which Notifications to update
+     */
+    where?: NotificationWhereInput
+  }
+
+  /**
+   * Notification upsert
+   */
+  export type NotificationUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Notification to update in case it exists.
+     */
+    where: NotificationWhereUniqueInput
+    /**
+     * In case the Notification found by the `where` argument doesn't exist, create a new Notification with this data.
+     */
+    create: XOR<NotificationCreateInput, NotificationUncheckedCreateInput>
+    /**
+     * In case the Notification was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<NotificationUpdateInput, NotificationUncheckedUpdateInput>
+  }
+
+  /**
+   * Notification delete
+   */
+  export type NotificationDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter which Notification to delete.
+     */
+    where: NotificationWhereUniqueInput
+  }
+
+  /**
+   * Notification deleteMany
+   */
+  export type NotificationDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Notifications to delete
+     */
+    where?: NotificationWhereInput
+  }
+
+  /**
+   * Notification without action
+   */
+  export type NotificationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -9619,12 +11857,49 @@ export namespace Prisma {
   export type CollaboratorScalarFieldEnum = (typeof CollaboratorScalarFieldEnum)[keyof typeof CollaboratorScalarFieldEnum]
 
 
+  export const DocumentInvitationScalarFieldEnum: {
+    id: 'id',
+    documentId: 'documentId',
+    email: 'email',
+    role: 'role',
+    token: 'token',
+    inviterId: 'inviterId',
+    expiresAt: 'expiresAt',
+    acceptedAt: 'acceptedAt',
+    createdAt: 'createdAt'
+  };
+
+  export type DocumentInvitationScalarFieldEnum = (typeof DocumentInvitationScalarFieldEnum)[keyof typeof DocumentInvitationScalarFieldEnum]
+
+
+  export const NotificationScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    type: 'type',
+    title: 'title',
+    message: 'message',
+    data: 'data',
+    isRead: 'isRead',
+    createdAt: 'createdAt'
+  };
+
+  export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
   };
 
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+  export const NullableJsonNullValueInput: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull
+  };
+
+  export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
   export const QueryMode: {
@@ -9641,6 +11916,15 @@ export namespace Prisma {
   };
 
   export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+  export const JsonNullValueFilter: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull,
+    AnyNull: typeof AnyNull
+  };
+
+  export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
   /**
@@ -9740,6 +12024,27 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'NotificationType'
+   */
+  export type EnumNotificationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationType'>
+    
+
+
+  /**
+   * Reference to a field of type 'NotificationType[]'
+   */
+  export type ListEnumNotificationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationType[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -9774,6 +12079,8 @@ export namespace Prisma {
     accounts?: AccountListRelationFilter
     ownedWorkspaces?: WorkspaceListRelationFilter
     workspaceMembers?: WorkspaceMemberListRelationFilter
+    notifications?: NotificationListRelationFilter
+    sentInvitations?: DocumentInvitationListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -9791,6 +12098,8 @@ export namespace Prisma {
     accounts?: AccountOrderByRelationAggregateInput
     ownedWorkspaces?: WorkspaceOrderByRelationAggregateInput
     workspaceMembers?: WorkspaceMemberOrderByRelationAggregateInput
+    notifications?: NotificationOrderByRelationAggregateInput
+    sentInvitations?: DocumentInvitationOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -9811,6 +12120,8 @@ export namespace Prisma {
     accounts?: AccountListRelationFilter
     ownedWorkspaces?: WorkspaceListRelationFilter
     workspaceMembers?: WorkspaceMemberListRelationFilter
+    notifications?: NotificationListRelationFilter
+    sentInvitations?: DocumentInvitationListRelationFilter
   }, "id" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -10175,6 +12486,7 @@ export namespace Prisma {
     owner?: XOR<UserRelationFilter, UserWhereInput>
     workspace?: XOR<WorkspaceNullableRelationFilter, WorkspaceWhereInput> | null
     collaborators?: CollaboratorListRelationFilter
+    invitations?: DocumentInvitationListRelationFilter
   }
 
   export type DocumentOrderByWithRelationInput = {
@@ -10192,6 +12504,7 @@ export namespace Prisma {
     owner?: UserOrderByWithRelationInput
     workspace?: WorkspaceOrderByWithRelationInput
     collaborators?: CollaboratorOrderByRelationAggregateInput
+    invitations?: DocumentInvitationOrderByRelationAggregateInput
   }
 
   export type DocumentWhereUniqueInput = Prisma.AtLeast<{
@@ -10212,6 +12525,7 @@ export namespace Prisma {
     owner?: XOR<UserRelationFilter, UserWhereInput>
     workspace?: XOR<WorkspaceNullableRelationFilter, WorkspaceWhereInput> | null
     collaborators?: CollaboratorListRelationFilter
+    invitations?: DocumentInvitationListRelationFilter
   }, "id">
 
   export type DocumentOrderByWithAggregationInput = {
@@ -10312,6 +12626,154 @@ export namespace Prisma {
     acceptedAt?: DateTimeNullableWithAggregatesFilter<"Collaborator"> | Date | string | null
   }
 
+  export type DocumentInvitationWhereInput = {
+    AND?: DocumentInvitationWhereInput | DocumentInvitationWhereInput[]
+    OR?: DocumentInvitationWhereInput[]
+    NOT?: DocumentInvitationWhereInput | DocumentInvitationWhereInput[]
+    id?: StringFilter<"DocumentInvitation"> | string
+    documentId?: StringFilter<"DocumentInvitation"> | string
+    email?: StringFilter<"DocumentInvitation"> | string
+    role?: EnumDocumentRoleFilter<"DocumentInvitation"> | $Enums.DocumentRole
+    token?: StringFilter<"DocumentInvitation"> | string
+    inviterId?: StringFilter<"DocumentInvitation"> | string
+    expiresAt?: DateTimeFilter<"DocumentInvitation"> | Date | string
+    acceptedAt?: DateTimeNullableFilter<"DocumentInvitation"> | Date | string | null
+    createdAt?: DateTimeFilter<"DocumentInvitation"> | Date | string
+    document?: XOR<DocumentRelationFilter, DocumentWhereInput>
+    inviter?: XOR<UserRelationFilter, UserWhereInput>
+  }
+
+  export type DocumentInvitationOrderByWithRelationInput = {
+    id?: SortOrder
+    documentId?: SortOrder
+    email?: SortOrder
+    role?: SortOrder
+    token?: SortOrder
+    inviterId?: SortOrder
+    expiresAt?: SortOrder
+    acceptedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    document?: DocumentOrderByWithRelationInput
+    inviter?: UserOrderByWithRelationInput
+  }
+
+  export type DocumentInvitationWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    token?: string
+    AND?: DocumentInvitationWhereInput | DocumentInvitationWhereInput[]
+    OR?: DocumentInvitationWhereInput[]
+    NOT?: DocumentInvitationWhereInput | DocumentInvitationWhereInput[]
+    documentId?: StringFilter<"DocumentInvitation"> | string
+    email?: StringFilter<"DocumentInvitation"> | string
+    role?: EnumDocumentRoleFilter<"DocumentInvitation"> | $Enums.DocumentRole
+    inviterId?: StringFilter<"DocumentInvitation"> | string
+    expiresAt?: DateTimeFilter<"DocumentInvitation"> | Date | string
+    acceptedAt?: DateTimeNullableFilter<"DocumentInvitation"> | Date | string | null
+    createdAt?: DateTimeFilter<"DocumentInvitation"> | Date | string
+    document?: XOR<DocumentRelationFilter, DocumentWhereInput>
+    inviter?: XOR<UserRelationFilter, UserWhereInput>
+  }, "id" | "token">
+
+  export type DocumentInvitationOrderByWithAggregationInput = {
+    id?: SortOrder
+    documentId?: SortOrder
+    email?: SortOrder
+    role?: SortOrder
+    token?: SortOrder
+    inviterId?: SortOrder
+    expiresAt?: SortOrder
+    acceptedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: DocumentInvitationCountOrderByAggregateInput
+    _max?: DocumentInvitationMaxOrderByAggregateInput
+    _min?: DocumentInvitationMinOrderByAggregateInput
+  }
+
+  export type DocumentInvitationScalarWhereWithAggregatesInput = {
+    AND?: DocumentInvitationScalarWhereWithAggregatesInput | DocumentInvitationScalarWhereWithAggregatesInput[]
+    OR?: DocumentInvitationScalarWhereWithAggregatesInput[]
+    NOT?: DocumentInvitationScalarWhereWithAggregatesInput | DocumentInvitationScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"DocumentInvitation"> | string
+    documentId?: StringWithAggregatesFilter<"DocumentInvitation"> | string
+    email?: StringWithAggregatesFilter<"DocumentInvitation"> | string
+    role?: EnumDocumentRoleWithAggregatesFilter<"DocumentInvitation"> | $Enums.DocumentRole
+    token?: StringWithAggregatesFilter<"DocumentInvitation"> | string
+    inviterId?: StringWithAggregatesFilter<"DocumentInvitation"> | string
+    expiresAt?: DateTimeWithAggregatesFilter<"DocumentInvitation"> | Date | string
+    acceptedAt?: DateTimeNullableWithAggregatesFilter<"DocumentInvitation"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"DocumentInvitation"> | Date | string
+  }
+
+  export type NotificationWhereInput = {
+    AND?: NotificationWhereInput | NotificationWhereInput[]
+    OR?: NotificationWhereInput[]
+    NOT?: NotificationWhereInput | NotificationWhereInput[]
+    id?: StringFilter<"Notification"> | string
+    userId?: StringFilter<"Notification"> | string
+    type?: EnumNotificationTypeFilter<"Notification"> | $Enums.NotificationType
+    title?: StringFilter<"Notification"> | string
+    message?: StringFilter<"Notification"> | string
+    data?: JsonNullableFilter<"Notification">
+    isRead?: BoolFilter<"Notification"> | boolean
+    createdAt?: DateTimeFilter<"Notification"> | Date | string
+    user?: XOR<UserRelationFilter, UserWhereInput>
+  }
+
+  export type NotificationOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    data?: SortOrderInput | SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type NotificationWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: NotificationWhereInput | NotificationWhereInput[]
+    OR?: NotificationWhereInput[]
+    NOT?: NotificationWhereInput | NotificationWhereInput[]
+    userId?: StringFilter<"Notification"> | string
+    type?: EnumNotificationTypeFilter<"Notification"> | $Enums.NotificationType
+    title?: StringFilter<"Notification"> | string
+    message?: StringFilter<"Notification"> | string
+    data?: JsonNullableFilter<"Notification">
+    isRead?: BoolFilter<"Notification"> | boolean
+    createdAt?: DateTimeFilter<"Notification"> | Date | string
+    user?: XOR<UserRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type NotificationOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    data?: SortOrderInput | SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
+    _count?: NotificationCountOrderByAggregateInput
+    _max?: NotificationMaxOrderByAggregateInput
+    _min?: NotificationMinOrderByAggregateInput
+  }
+
+  export type NotificationScalarWhereWithAggregatesInput = {
+    AND?: NotificationScalarWhereWithAggregatesInput | NotificationScalarWhereWithAggregatesInput[]
+    OR?: NotificationScalarWhereWithAggregatesInput[]
+    NOT?: NotificationScalarWhereWithAggregatesInput | NotificationScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Notification"> | string
+    userId?: StringWithAggregatesFilter<"Notification"> | string
+    type?: EnumNotificationTypeWithAggregatesFilter<"Notification"> | $Enums.NotificationType
+    title?: StringWithAggregatesFilter<"Notification"> | string
+    message?: StringWithAggregatesFilter<"Notification"> | string
+    data?: JsonNullableWithAggregatesFilter<"Notification">
+    isRead?: BoolWithAggregatesFilter<"Notification"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"Notification"> | Date | string
+  }
+
   export type UserCreateInput = {
     id?: string
     email: string
@@ -10327,6 +12789,8 @@ export namespace Prisma {
     accounts?: AccountCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberCreateNestedManyWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationCreateNestedManyWithoutInviterInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -10344,6 +12808,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationUncheckedCreateNestedManyWithoutInviterInput
   }
 
   export type UserUpdateInput = {
@@ -10361,6 +12827,8 @@ export namespace Prisma {
     accounts?: AccountUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUpdateManyWithoutInviterNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -10378,6 +12846,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUncheckedUpdateManyWithoutInviterNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -10751,6 +13221,7 @@ export namespace Prisma {
     owner: UserCreateNestedOneWithoutOwnedDocumentsInput
     workspace?: WorkspaceCreateNestedOneWithoutDocumentsInput
     collaborators?: CollaboratorCreateNestedManyWithoutDocumentInput
+    invitations?: DocumentInvitationCreateNestedManyWithoutDocumentInput
   }
 
   export type DocumentUncheckedCreateInput = {
@@ -10766,6 +13237,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     collaborators?: CollaboratorUncheckedCreateNestedManyWithoutDocumentInput
+    invitations?: DocumentInvitationUncheckedCreateNestedManyWithoutDocumentInput
   }
 
   export type DocumentUpdateInput = {
@@ -10781,6 +13253,7 @@ export namespace Prisma {
     owner?: UserUpdateOneRequiredWithoutOwnedDocumentsNestedInput
     workspace?: WorkspaceUpdateOneWithoutDocumentsNestedInput
     collaborators?: CollaboratorUpdateManyWithoutDocumentNestedInput
+    invitations?: DocumentInvitationUpdateManyWithoutDocumentNestedInput
   }
 
   export type DocumentUncheckedUpdateInput = {
@@ -10796,6 +13269,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     collaborators?: CollaboratorUncheckedUpdateManyWithoutDocumentNestedInput
+    invitations?: DocumentInvitationUncheckedUpdateManyWithoutDocumentNestedInput
   }
 
   export type DocumentCreateManyInput = {
@@ -10899,6 +13373,164 @@ export namespace Prisma {
     acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
+  export type DocumentInvitationCreateInput = {
+    id?: string
+    email: string
+    role?: $Enums.DocumentRole
+    token: string
+    expiresAt: Date | string
+    acceptedAt?: Date | string | null
+    createdAt?: Date | string
+    document: DocumentCreateNestedOneWithoutInvitationsInput
+    inviter: UserCreateNestedOneWithoutSentInvitationsInput
+  }
+
+  export type DocumentInvitationUncheckedCreateInput = {
+    id?: string
+    documentId: string
+    email: string
+    role?: $Enums.DocumentRole
+    token: string
+    inviterId: string
+    expiresAt: Date | string
+    acceptedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type DocumentInvitationUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    document?: DocumentUpdateOneRequiredWithoutInvitationsNestedInput
+    inviter?: UserUpdateOneRequiredWithoutSentInvitationsNestedInput
+  }
+
+  export type DocumentInvitationUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    documentId?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    inviterId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentInvitationCreateManyInput = {
+    id?: string
+    documentId: string
+    email: string
+    role?: $Enums.DocumentRole
+    token: string
+    inviterId: string
+    expiresAt: Date | string
+    acceptedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type DocumentInvitationUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentInvitationUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    documentId?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    inviterId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationCreateInput = {
+    id?: string
+    type: $Enums.NotificationType
+    title: string
+    message: string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: boolean
+    createdAt?: Date | string
+    user: UserCreateNestedOneWithoutNotificationsInput
+  }
+
+  export type NotificationUncheckedCreateInput = {
+    id?: string
+    userId: string
+    type: $Enums.NotificationType
+    title: string
+    message: string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: boolean
+    createdAt?: Date | string
+  }
+
+  export type NotificationUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutNotificationsNestedInput
+  }
+
+  export type NotificationUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationCreateManyInput = {
+    id?: string
+    userId: string
+    type: $Enums.NotificationType
+    title: string
+    message: string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: boolean
+    createdAt?: Date | string
+  }
+
+  export type NotificationUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -10987,6 +13619,18 @@ export namespace Prisma {
     none?: WorkspaceMemberWhereInput
   }
 
+  export type NotificationListRelationFilter = {
+    every?: NotificationWhereInput
+    some?: NotificationWhereInput
+    none?: NotificationWhereInput
+  }
+
+  export type DocumentInvitationListRelationFilter = {
+    every?: DocumentInvitationWhereInput
+    some?: DocumentInvitationWhereInput
+    none?: DocumentInvitationWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -11013,6 +13657,14 @@ export namespace Prisma {
   }
 
   export type WorkspaceMemberOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type NotificationOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type DocumentInvitationOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -11459,6 +14111,137 @@ export namespace Prisma {
     _max?: NestedEnumDocumentRoleFilter<$PrismaModel>
   }
 
+  export type DocumentInvitationCountOrderByAggregateInput = {
+    id?: SortOrder
+    documentId?: SortOrder
+    email?: SortOrder
+    role?: SortOrder
+    token?: SortOrder
+    inviterId?: SortOrder
+    expiresAt?: SortOrder
+    acceptedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DocumentInvitationMaxOrderByAggregateInput = {
+    id?: SortOrder
+    documentId?: SortOrder
+    email?: SortOrder
+    role?: SortOrder
+    token?: SortOrder
+    inviterId?: SortOrder
+    expiresAt?: SortOrder
+    acceptedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DocumentInvitationMinOrderByAggregateInput = {
+    id?: SortOrder
+    documentId?: SortOrder
+    email?: SortOrder
+    role?: SortOrder
+    token?: SortOrder
+    inviterId?: SortOrder
+    expiresAt?: SortOrder
+    acceptedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumNotificationTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.NotificationType | EnumNotificationTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.NotificationType[] | ListEnumNotificationTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.NotificationType[] | ListEnumNotificationTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumNotificationTypeFilter<$PrismaModel> | $Enums.NotificationType
+  }
+  export type JsonNullableFilter<$PrismaModel = never> = 
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NotificationCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    data?: SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type NotificationMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type NotificationMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    message?: SortOrder
+    isRead?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumNotificationTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.NotificationType | EnumNotificationTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.NotificationType[] | ListEnumNotificationTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.NotificationType[] | ListEnumNotificationTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumNotificationTypeWithAggregatesFilter<$PrismaModel> | $Enums.NotificationType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumNotificationTypeFilter<$PrismaModel>
+    _max?: NestedEnumNotificationTypeFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> = 
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
+
   export type DocumentCreateNestedManyWithoutOwnerInput = {
     create?: XOR<DocumentCreateWithoutOwnerInput, DocumentUncheckedCreateWithoutOwnerInput> | DocumentCreateWithoutOwnerInput[] | DocumentUncheckedCreateWithoutOwnerInput[]
     connectOrCreate?: DocumentCreateOrConnectWithoutOwnerInput | DocumentCreateOrConnectWithoutOwnerInput[]
@@ -11501,6 +14284,20 @@ export namespace Prisma {
     connect?: WorkspaceMemberWhereUniqueInput | WorkspaceMemberWhereUniqueInput[]
   }
 
+  export type NotificationCreateNestedManyWithoutUserInput = {
+    create?: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput> | NotificationCreateWithoutUserInput[] | NotificationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutUserInput | NotificationCreateOrConnectWithoutUserInput[]
+    createMany?: NotificationCreateManyUserInputEnvelope
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+  }
+
+  export type DocumentInvitationCreateNestedManyWithoutInviterInput = {
+    create?: XOR<DocumentInvitationCreateWithoutInviterInput, DocumentInvitationUncheckedCreateWithoutInviterInput> | DocumentInvitationCreateWithoutInviterInput[] | DocumentInvitationUncheckedCreateWithoutInviterInput[]
+    connectOrCreate?: DocumentInvitationCreateOrConnectWithoutInviterInput | DocumentInvitationCreateOrConnectWithoutInviterInput[]
+    createMany?: DocumentInvitationCreateManyInviterInputEnvelope
+    connect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+  }
+
   export type DocumentUncheckedCreateNestedManyWithoutOwnerInput = {
     create?: XOR<DocumentCreateWithoutOwnerInput, DocumentUncheckedCreateWithoutOwnerInput> | DocumentCreateWithoutOwnerInput[] | DocumentUncheckedCreateWithoutOwnerInput[]
     connectOrCreate?: DocumentCreateOrConnectWithoutOwnerInput | DocumentCreateOrConnectWithoutOwnerInput[]
@@ -11541,6 +14338,20 @@ export namespace Prisma {
     connectOrCreate?: WorkspaceMemberCreateOrConnectWithoutUserInput | WorkspaceMemberCreateOrConnectWithoutUserInput[]
     createMany?: WorkspaceMemberCreateManyUserInputEnvelope
     connect?: WorkspaceMemberWhereUniqueInput | WorkspaceMemberWhereUniqueInput[]
+  }
+
+  export type NotificationUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput> | NotificationCreateWithoutUserInput[] | NotificationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutUserInput | NotificationCreateOrConnectWithoutUserInput[]
+    createMany?: NotificationCreateManyUserInputEnvelope
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+  }
+
+  export type DocumentInvitationUncheckedCreateNestedManyWithoutInviterInput = {
+    create?: XOR<DocumentInvitationCreateWithoutInviterInput, DocumentInvitationUncheckedCreateWithoutInviterInput> | DocumentInvitationCreateWithoutInviterInput[] | DocumentInvitationUncheckedCreateWithoutInviterInput[]
+    connectOrCreate?: DocumentInvitationCreateOrConnectWithoutInviterInput | DocumentInvitationCreateOrConnectWithoutInviterInput[]
+    createMany?: DocumentInvitationCreateManyInviterInputEnvelope
+    connect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -11643,6 +14454,34 @@ export namespace Prisma {
     deleteMany?: WorkspaceMemberScalarWhereInput | WorkspaceMemberScalarWhereInput[]
   }
 
+  export type NotificationUpdateManyWithoutUserNestedInput = {
+    create?: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput> | NotificationCreateWithoutUserInput[] | NotificationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutUserInput | NotificationCreateOrConnectWithoutUserInput[]
+    upsert?: NotificationUpsertWithWhereUniqueWithoutUserInput | NotificationUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: NotificationCreateManyUserInputEnvelope
+    set?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    disconnect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    delete?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    update?: NotificationUpdateWithWhereUniqueWithoutUserInput | NotificationUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: NotificationUpdateManyWithWhereWithoutUserInput | NotificationUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+  }
+
+  export type DocumentInvitationUpdateManyWithoutInviterNestedInput = {
+    create?: XOR<DocumentInvitationCreateWithoutInviterInput, DocumentInvitationUncheckedCreateWithoutInviterInput> | DocumentInvitationCreateWithoutInviterInput[] | DocumentInvitationUncheckedCreateWithoutInviterInput[]
+    connectOrCreate?: DocumentInvitationCreateOrConnectWithoutInviterInput | DocumentInvitationCreateOrConnectWithoutInviterInput[]
+    upsert?: DocumentInvitationUpsertWithWhereUniqueWithoutInviterInput | DocumentInvitationUpsertWithWhereUniqueWithoutInviterInput[]
+    createMany?: DocumentInvitationCreateManyInviterInputEnvelope
+    set?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    disconnect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    delete?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    connect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    update?: DocumentInvitationUpdateWithWhereUniqueWithoutInviterInput | DocumentInvitationUpdateWithWhereUniqueWithoutInviterInput[]
+    updateMany?: DocumentInvitationUpdateManyWithWhereWithoutInviterInput | DocumentInvitationUpdateManyWithWhereWithoutInviterInput[]
+    deleteMany?: DocumentInvitationScalarWhereInput | DocumentInvitationScalarWhereInput[]
+  }
+
   export type DocumentUncheckedUpdateManyWithoutOwnerNestedInput = {
     create?: XOR<DocumentCreateWithoutOwnerInput, DocumentUncheckedCreateWithoutOwnerInput> | DocumentCreateWithoutOwnerInput[] | DocumentUncheckedCreateWithoutOwnerInput[]
     connectOrCreate?: DocumentCreateOrConnectWithoutOwnerInput | DocumentCreateOrConnectWithoutOwnerInput[]
@@ -11725,6 +14564,34 @@ export namespace Prisma {
     update?: WorkspaceMemberUpdateWithWhereUniqueWithoutUserInput | WorkspaceMemberUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: WorkspaceMemberUpdateManyWithWhereWithoutUserInput | WorkspaceMemberUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: WorkspaceMemberScalarWhereInput | WorkspaceMemberScalarWhereInput[]
+  }
+
+  export type NotificationUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput> | NotificationCreateWithoutUserInput[] | NotificationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutUserInput | NotificationCreateOrConnectWithoutUserInput[]
+    upsert?: NotificationUpsertWithWhereUniqueWithoutUserInput | NotificationUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: NotificationCreateManyUserInputEnvelope
+    set?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    disconnect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    delete?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    update?: NotificationUpdateWithWhereUniqueWithoutUserInput | NotificationUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: NotificationUpdateManyWithWhereWithoutUserInput | NotificationUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+  }
+
+  export type DocumentInvitationUncheckedUpdateManyWithoutInviterNestedInput = {
+    create?: XOR<DocumentInvitationCreateWithoutInviterInput, DocumentInvitationUncheckedCreateWithoutInviterInput> | DocumentInvitationCreateWithoutInviterInput[] | DocumentInvitationUncheckedCreateWithoutInviterInput[]
+    connectOrCreate?: DocumentInvitationCreateOrConnectWithoutInviterInput | DocumentInvitationCreateOrConnectWithoutInviterInput[]
+    upsert?: DocumentInvitationUpsertWithWhereUniqueWithoutInviterInput | DocumentInvitationUpsertWithWhereUniqueWithoutInviterInput[]
+    createMany?: DocumentInvitationCreateManyInviterInputEnvelope
+    set?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    disconnect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    delete?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    connect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    update?: DocumentInvitationUpdateWithWhereUniqueWithoutInviterInput | DocumentInvitationUpdateWithWhereUniqueWithoutInviterInput[]
+    updateMany?: DocumentInvitationUpdateManyWithWhereWithoutInviterInput | DocumentInvitationUpdateManyWithWhereWithoutInviterInput[]
+    deleteMany?: DocumentInvitationScalarWhereInput | DocumentInvitationScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutAccountsInput = {
@@ -11912,11 +14779,25 @@ export namespace Prisma {
     connect?: CollaboratorWhereUniqueInput | CollaboratorWhereUniqueInput[]
   }
 
+  export type DocumentInvitationCreateNestedManyWithoutDocumentInput = {
+    create?: XOR<DocumentInvitationCreateWithoutDocumentInput, DocumentInvitationUncheckedCreateWithoutDocumentInput> | DocumentInvitationCreateWithoutDocumentInput[] | DocumentInvitationUncheckedCreateWithoutDocumentInput[]
+    connectOrCreate?: DocumentInvitationCreateOrConnectWithoutDocumentInput | DocumentInvitationCreateOrConnectWithoutDocumentInput[]
+    createMany?: DocumentInvitationCreateManyDocumentInputEnvelope
+    connect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+  }
+
   export type CollaboratorUncheckedCreateNestedManyWithoutDocumentInput = {
     create?: XOR<CollaboratorCreateWithoutDocumentInput, CollaboratorUncheckedCreateWithoutDocumentInput> | CollaboratorCreateWithoutDocumentInput[] | CollaboratorUncheckedCreateWithoutDocumentInput[]
     connectOrCreate?: CollaboratorCreateOrConnectWithoutDocumentInput | CollaboratorCreateOrConnectWithoutDocumentInput[]
     createMany?: CollaboratorCreateManyDocumentInputEnvelope
     connect?: CollaboratorWhereUniqueInput | CollaboratorWhereUniqueInput[]
+  }
+
+  export type DocumentInvitationUncheckedCreateNestedManyWithoutDocumentInput = {
+    create?: XOR<DocumentInvitationCreateWithoutDocumentInput, DocumentInvitationUncheckedCreateWithoutDocumentInput> | DocumentInvitationCreateWithoutDocumentInput[] | DocumentInvitationUncheckedCreateWithoutDocumentInput[]
+    connectOrCreate?: DocumentInvitationCreateOrConnectWithoutDocumentInput | DocumentInvitationCreateOrConnectWithoutDocumentInput[]
+    createMany?: DocumentInvitationCreateManyDocumentInputEnvelope
+    connect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
   }
 
   export type NullableBytesFieldUpdateOperationsInput = {
@@ -11959,6 +14840,20 @@ export namespace Prisma {
     deleteMany?: CollaboratorScalarWhereInput | CollaboratorScalarWhereInput[]
   }
 
+  export type DocumentInvitationUpdateManyWithoutDocumentNestedInput = {
+    create?: XOR<DocumentInvitationCreateWithoutDocumentInput, DocumentInvitationUncheckedCreateWithoutDocumentInput> | DocumentInvitationCreateWithoutDocumentInput[] | DocumentInvitationUncheckedCreateWithoutDocumentInput[]
+    connectOrCreate?: DocumentInvitationCreateOrConnectWithoutDocumentInput | DocumentInvitationCreateOrConnectWithoutDocumentInput[]
+    upsert?: DocumentInvitationUpsertWithWhereUniqueWithoutDocumentInput | DocumentInvitationUpsertWithWhereUniqueWithoutDocumentInput[]
+    createMany?: DocumentInvitationCreateManyDocumentInputEnvelope
+    set?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    disconnect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    delete?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    connect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    update?: DocumentInvitationUpdateWithWhereUniqueWithoutDocumentInput | DocumentInvitationUpdateWithWhereUniqueWithoutDocumentInput[]
+    updateMany?: DocumentInvitationUpdateManyWithWhereWithoutDocumentInput | DocumentInvitationUpdateManyWithWhereWithoutDocumentInput[]
+    deleteMany?: DocumentInvitationScalarWhereInput | DocumentInvitationScalarWhereInput[]
+  }
+
   export type CollaboratorUncheckedUpdateManyWithoutDocumentNestedInput = {
     create?: XOR<CollaboratorCreateWithoutDocumentInput, CollaboratorUncheckedCreateWithoutDocumentInput> | CollaboratorCreateWithoutDocumentInput[] | CollaboratorUncheckedCreateWithoutDocumentInput[]
     connectOrCreate?: CollaboratorCreateOrConnectWithoutDocumentInput | CollaboratorCreateOrConnectWithoutDocumentInput[]
@@ -11971,6 +14866,20 @@ export namespace Prisma {
     update?: CollaboratorUpdateWithWhereUniqueWithoutDocumentInput | CollaboratorUpdateWithWhereUniqueWithoutDocumentInput[]
     updateMany?: CollaboratorUpdateManyWithWhereWithoutDocumentInput | CollaboratorUpdateManyWithWhereWithoutDocumentInput[]
     deleteMany?: CollaboratorScalarWhereInput | CollaboratorScalarWhereInput[]
+  }
+
+  export type DocumentInvitationUncheckedUpdateManyWithoutDocumentNestedInput = {
+    create?: XOR<DocumentInvitationCreateWithoutDocumentInput, DocumentInvitationUncheckedCreateWithoutDocumentInput> | DocumentInvitationCreateWithoutDocumentInput[] | DocumentInvitationUncheckedCreateWithoutDocumentInput[]
+    connectOrCreate?: DocumentInvitationCreateOrConnectWithoutDocumentInput | DocumentInvitationCreateOrConnectWithoutDocumentInput[]
+    upsert?: DocumentInvitationUpsertWithWhereUniqueWithoutDocumentInput | DocumentInvitationUpsertWithWhereUniqueWithoutDocumentInput[]
+    createMany?: DocumentInvitationCreateManyDocumentInputEnvelope
+    set?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    disconnect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    delete?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    connect?: DocumentInvitationWhereUniqueInput | DocumentInvitationWhereUniqueInput[]
+    update?: DocumentInvitationUpdateWithWhereUniqueWithoutDocumentInput | DocumentInvitationUpdateWithWhereUniqueWithoutDocumentInput[]
+    updateMany?: DocumentInvitationUpdateManyWithWhereWithoutDocumentInput | DocumentInvitationUpdateManyWithWhereWithoutDocumentInput[]
+    deleteMany?: DocumentInvitationScalarWhereInput | DocumentInvitationScalarWhereInput[]
   }
 
   export type DocumentCreateNestedOneWithoutCollaboratorsInput = {
@@ -12003,6 +14912,52 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutCollaborationsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCollaborationsInput, UserUpdateWithoutCollaborationsInput>, UserUncheckedUpdateWithoutCollaborationsInput>
+  }
+
+  export type DocumentCreateNestedOneWithoutInvitationsInput = {
+    create?: XOR<DocumentCreateWithoutInvitationsInput, DocumentUncheckedCreateWithoutInvitationsInput>
+    connectOrCreate?: DocumentCreateOrConnectWithoutInvitationsInput
+    connect?: DocumentWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutSentInvitationsInput = {
+    create?: XOR<UserCreateWithoutSentInvitationsInput, UserUncheckedCreateWithoutSentInvitationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutSentInvitationsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type DocumentUpdateOneRequiredWithoutInvitationsNestedInput = {
+    create?: XOR<DocumentCreateWithoutInvitationsInput, DocumentUncheckedCreateWithoutInvitationsInput>
+    connectOrCreate?: DocumentCreateOrConnectWithoutInvitationsInput
+    upsert?: DocumentUpsertWithoutInvitationsInput
+    connect?: DocumentWhereUniqueInput
+    update?: XOR<XOR<DocumentUpdateToOneWithWhereWithoutInvitationsInput, DocumentUpdateWithoutInvitationsInput>, DocumentUncheckedUpdateWithoutInvitationsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutSentInvitationsNestedInput = {
+    create?: XOR<UserCreateWithoutSentInvitationsInput, UserUncheckedCreateWithoutSentInvitationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutSentInvitationsInput
+    upsert?: UserUpsertWithoutSentInvitationsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutSentInvitationsInput, UserUpdateWithoutSentInvitationsInput>, UserUncheckedUpdateWithoutSentInvitationsInput>
+  }
+
+  export type UserCreateNestedOneWithoutNotificationsInput = {
+    create?: XOR<UserCreateWithoutNotificationsInput, UserUncheckedCreateWithoutNotificationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutNotificationsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumNotificationTypeFieldUpdateOperationsInput = {
+    set?: $Enums.NotificationType
+  }
+
+  export type UserUpdateOneRequiredWithoutNotificationsNestedInput = {
+    create?: XOR<UserCreateWithoutNotificationsInput, UserUncheckedCreateWithoutNotificationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutNotificationsInput
+    upsert?: UserUpsertWithoutNotificationsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutNotificationsInput, UserUpdateWithoutNotificationsInput>, UserUncheckedUpdateWithoutNotificationsInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -12230,6 +15185,45 @@ export namespace Prisma {
     _max?: NestedEnumDocumentRoleFilter<$PrismaModel>
   }
 
+  export type NestedEnumNotificationTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.NotificationType | EnumNotificationTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.NotificationType[] | ListEnumNotificationTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.NotificationType[] | ListEnumNotificationTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumNotificationTypeFilter<$PrismaModel> | $Enums.NotificationType
+  }
+
+  export type NestedEnumNotificationTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.NotificationType | EnumNotificationTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.NotificationType[] | ListEnumNotificationTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.NotificationType[] | ListEnumNotificationTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumNotificationTypeWithAggregatesFilter<$PrismaModel> | $Enums.NotificationType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumNotificationTypeFilter<$PrismaModel>
+    _max?: NestedEnumNotificationTypeFilter<$PrismaModel>
+  }
+  export type NestedJsonNullableFilter<$PrismaModel = never> = 
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
   export type DocumentCreateWithoutOwnerInput = {
     id?: string
     title?: string
@@ -12242,6 +15236,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     workspace?: WorkspaceCreateNestedOneWithoutDocumentsInput
     collaborators?: CollaboratorCreateNestedManyWithoutDocumentInput
+    invitations?: DocumentInvitationCreateNestedManyWithoutDocumentInput
   }
 
   export type DocumentUncheckedCreateWithoutOwnerInput = {
@@ -12256,6 +15251,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     collaborators?: CollaboratorUncheckedCreateNestedManyWithoutDocumentInput
+    invitations?: DocumentInvitationUncheckedCreateNestedManyWithoutDocumentInput
   }
 
   export type DocumentCreateOrConnectWithoutOwnerInput = {
@@ -12407,6 +15403,68 @@ export namespace Prisma {
 
   export type WorkspaceMemberCreateManyUserInputEnvelope = {
     data: WorkspaceMemberCreateManyUserInput | WorkspaceMemberCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type NotificationCreateWithoutUserInput = {
+    id?: string
+    type: $Enums.NotificationType
+    title: string
+    message: string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: boolean
+    createdAt?: Date | string
+  }
+
+  export type NotificationUncheckedCreateWithoutUserInput = {
+    id?: string
+    type: $Enums.NotificationType
+    title: string
+    message: string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: boolean
+    createdAt?: Date | string
+  }
+
+  export type NotificationCreateOrConnectWithoutUserInput = {
+    where: NotificationWhereUniqueInput
+    create: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput>
+  }
+
+  export type NotificationCreateManyUserInputEnvelope = {
+    data: NotificationCreateManyUserInput | NotificationCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DocumentInvitationCreateWithoutInviterInput = {
+    id?: string
+    email: string
+    role?: $Enums.DocumentRole
+    token: string
+    expiresAt: Date | string
+    acceptedAt?: Date | string | null
+    createdAt?: Date | string
+    document: DocumentCreateNestedOneWithoutInvitationsInput
+  }
+
+  export type DocumentInvitationUncheckedCreateWithoutInviterInput = {
+    id?: string
+    documentId: string
+    email: string
+    role?: $Enums.DocumentRole
+    token: string
+    expiresAt: Date | string
+    acceptedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type DocumentInvitationCreateOrConnectWithoutInviterInput = {
+    where: DocumentInvitationWhereUniqueInput
+    create: XOR<DocumentInvitationCreateWithoutInviterInput, DocumentInvitationUncheckedCreateWithoutInviterInput>
+  }
+
+  export type DocumentInvitationCreateManyInviterInputEnvelope = {
+    data: DocumentInvitationCreateManyInviterInput | DocumentInvitationCreateManyInviterInput[]
     skipDuplicates?: boolean
   }
 
@@ -12587,6 +15645,67 @@ export namespace Prisma {
     joinedAt?: DateTimeFilter<"WorkspaceMember"> | Date | string
   }
 
+  export type NotificationUpsertWithWhereUniqueWithoutUserInput = {
+    where: NotificationWhereUniqueInput
+    update: XOR<NotificationUpdateWithoutUserInput, NotificationUncheckedUpdateWithoutUserInput>
+    create: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput>
+  }
+
+  export type NotificationUpdateWithWhereUniqueWithoutUserInput = {
+    where: NotificationWhereUniqueInput
+    data: XOR<NotificationUpdateWithoutUserInput, NotificationUncheckedUpdateWithoutUserInput>
+  }
+
+  export type NotificationUpdateManyWithWhereWithoutUserInput = {
+    where: NotificationScalarWhereInput
+    data: XOR<NotificationUpdateManyMutationInput, NotificationUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type NotificationScalarWhereInput = {
+    AND?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+    OR?: NotificationScalarWhereInput[]
+    NOT?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+    id?: StringFilter<"Notification"> | string
+    userId?: StringFilter<"Notification"> | string
+    type?: EnumNotificationTypeFilter<"Notification"> | $Enums.NotificationType
+    title?: StringFilter<"Notification"> | string
+    message?: StringFilter<"Notification"> | string
+    data?: JsonNullableFilter<"Notification">
+    isRead?: BoolFilter<"Notification"> | boolean
+    createdAt?: DateTimeFilter<"Notification"> | Date | string
+  }
+
+  export type DocumentInvitationUpsertWithWhereUniqueWithoutInviterInput = {
+    where: DocumentInvitationWhereUniqueInput
+    update: XOR<DocumentInvitationUpdateWithoutInviterInput, DocumentInvitationUncheckedUpdateWithoutInviterInput>
+    create: XOR<DocumentInvitationCreateWithoutInviterInput, DocumentInvitationUncheckedCreateWithoutInviterInput>
+  }
+
+  export type DocumentInvitationUpdateWithWhereUniqueWithoutInviterInput = {
+    where: DocumentInvitationWhereUniqueInput
+    data: XOR<DocumentInvitationUpdateWithoutInviterInput, DocumentInvitationUncheckedUpdateWithoutInviterInput>
+  }
+
+  export type DocumentInvitationUpdateManyWithWhereWithoutInviterInput = {
+    where: DocumentInvitationScalarWhereInput
+    data: XOR<DocumentInvitationUpdateManyMutationInput, DocumentInvitationUncheckedUpdateManyWithoutInviterInput>
+  }
+
+  export type DocumentInvitationScalarWhereInput = {
+    AND?: DocumentInvitationScalarWhereInput | DocumentInvitationScalarWhereInput[]
+    OR?: DocumentInvitationScalarWhereInput[]
+    NOT?: DocumentInvitationScalarWhereInput | DocumentInvitationScalarWhereInput[]
+    id?: StringFilter<"DocumentInvitation"> | string
+    documentId?: StringFilter<"DocumentInvitation"> | string
+    email?: StringFilter<"DocumentInvitation"> | string
+    role?: EnumDocumentRoleFilter<"DocumentInvitation"> | $Enums.DocumentRole
+    token?: StringFilter<"DocumentInvitation"> | string
+    inviterId?: StringFilter<"DocumentInvitation"> | string
+    expiresAt?: DateTimeFilter<"DocumentInvitation"> | Date | string
+    acceptedAt?: DateTimeNullableFilter<"DocumentInvitation"> | Date | string | null
+    createdAt?: DateTimeFilter<"DocumentInvitation"> | Date | string
+  }
+
   export type UserCreateWithoutAccountsInput = {
     id?: string
     email: string
@@ -12601,6 +15720,8 @@ export namespace Prisma {
     sessions?: SessionCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberCreateNestedManyWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationCreateNestedManyWithoutInviterInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -12617,6 +15738,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationUncheckedCreateNestedManyWithoutInviterInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -12649,6 +15772,8 @@ export namespace Prisma {
     sessions?: SessionUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUpdateManyWithoutInviterNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -12665,6 +15790,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUncheckedUpdateManyWithoutInviterNestedInput
   }
 
   export type UserCreateWithoutSessionsInput = {
@@ -12681,6 +15808,8 @@ export namespace Prisma {
     accounts?: AccountCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberCreateNestedManyWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationCreateNestedManyWithoutInviterInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -12697,6 +15826,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationUncheckedCreateNestedManyWithoutInviterInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -12729,6 +15860,8 @@ export namespace Prisma {
     accounts?: AccountUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUpdateManyWithoutInviterNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -12745,6 +15878,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUncheckedUpdateManyWithoutInviterNestedInput
   }
 
   export type UserCreateWithoutOwnedWorkspacesInput = {
@@ -12761,6 +15896,8 @@ export namespace Prisma {
     sessions?: SessionCreateNestedManyWithoutUserInput
     accounts?: AccountCreateNestedManyWithoutUserInput
     workspaceMembers?: WorkspaceMemberCreateNestedManyWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationCreateNestedManyWithoutInviterInput
   }
 
   export type UserUncheckedCreateWithoutOwnedWorkspacesInput = {
@@ -12777,6 +15914,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     workspaceMembers?: WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationUncheckedCreateNestedManyWithoutInviterInput
   }
 
   export type UserCreateOrConnectWithoutOwnedWorkspacesInput = {
@@ -12820,6 +15959,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutOwnedDocumentsInput
     collaborators?: CollaboratorCreateNestedManyWithoutDocumentInput
+    invitations?: DocumentInvitationCreateNestedManyWithoutDocumentInput
   }
 
   export type DocumentUncheckedCreateWithoutWorkspaceInput = {
@@ -12834,6 +15974,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     collaborators?: CollaboratorUncheckedCreateNestedManyWithoutDocumentInput
+    invitations?: DocumentInvitationUncheckedCreateNestedManyWithoutDocumentInput
   }
 
   export type DocumentCreateOrConnectWithoutWorkspaceInput = {
@@ -12871,6 +16012,8 @@ export namespace Prisma {
     sessions?: SessionUpdateManyWithoutUserNestedInput
     accounts?: AccountUpdateManyWithoutUserNestedInput
     workspaceMembers?: WorkspaceMemberUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUpdateManyWithoutInviterNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOwnedWorkspacesInput = {
@@ -12887,6 +16030,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     workspaceMembers?: WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUncheckedUpdateManyWithoutInviterNestedInput
   }
 
   export type WorkspaceMemberUpsertWithWhereUniqueWithoutWorkspaceInput = {
@@ -12962,6 +16107,8 @@ export namespace Prisma {
     sessions?: SessionCreateNestedManyWithoutUserInput
     accounts?: AccountCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceCreateNestedManyWithoutOwnerInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationCreateNestedManyWithoutInviterInput
   }
 
   export type UserUncheckedCreateWithoutWorkspaceMembersInput = {
@@ -12978,6 +16125,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationUncheckedCreateNestedManyWithoutInviterInput
   }
 
   export type UserCreateOrConnectWithoutWorkspaceMembersInput = {
@@ -13043,6 +16192,8 @@ export namespace Prisma {
     sessions?: SessionUpdateManyWithoutUserNestedInput
     accounts?: AccountUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUpdateManyWithoutOwnerNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUpdateManyWithoutInviterNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkspaceMembersInput = {
@@ -13059,6 +16210,8 @@ export namespace Prisma {
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUncheckedUpdateManyWithoutInviterNestedInput
   }
 
   export type UserCreateWithoutOwnedDocumentsInput = {
@@ -13075,6 +16228,8 @@ export namespace Prisma {
     accounts?: AccountCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberCreateNestedManyWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationCreateNestedManyWithoutInviterInput
   }
 
   export type UserUncheckedCreateWithoutOwnedDocumentsInput = {
@@ -13091,6 +16246,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationUncheckedCreateNestedManyWithoutInviterInput
   }
 
   export type UserCreateOrConnectWithoutOwnedDocumentsInput = {
@@ -13151,6 +16308,38 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type DocumentInvitationCreateWithoutDocumentInput = {
+    id?: string
+    email: string
+    role?: $Enums.DocumentRole
+    token: string
+    expiresAt: Date | string
+    acceptedAt?: Date | string | null
+    createdAt?: Date | string
+    inviter: UserCreateNestedOneWithoutSentInvitationsInput
+  }
+
+  export type DocumentInvitationUncheckedCreateWithoutDocumentInput = {
+    id?: string
+    email: string
+    role?: $Enums.DocumentRole
+    token: string
+    inviterId: string
+    expiresAt: Date | string
+    acceptedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type DocumentInvitationCreateOrConnectWithoutDocumentInput = {
+    where: DocumentInvitationWhereUniqueInput
+    create: XOR<DocumentInvitationCreateWithoutDocumentInput, DocumentInvitationUncheckedCreateWithoutDocumentInput>
+  }
+
+  export type DocumentInvitationCreateManyDocumentInputEnvelope = {
+    data: DocumentInvitationCreateManyDocumentInput | DocumentInvitationCreateManyDocumentInput[]
+    skipDuplicates?: boolean
+  }
+
   export type UserUpsertWithoutOwnedDocumentsInput = {
     update: XOR<UserUpdateWithoutOwnedDocumentsInput, UserUncheckedUpdateWithoutOwnedDocumentsInput>
     create: XOR<UserCreateWithoutOwnedDocumentsInput, UserUncheckedCreateWithoutOwnedDocumentsInput>
@@ -13176,6 +16365,8 @@ export namespace Prisma {
     accounts?: AccountUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUpdateManyWithoutInviterNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOwnedDocumentsInput = {
@@ -13192,6 +16383,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUncheckedUpdateManyWithoutInviterNestedInput
   }
 
   export type WorkspaceUpsertWithoutDocumentsInput = {
@@ -13243,6 +16436,22 @@ export namespace Prisma {
     data: XOR<CollaboratorUpdateManyMutationInput, CollaboratorUncheckedUpdateManyWithoutDocumentInput>
   }
 
+  export type DocumentInvitationUpsertWithWhereUniqueWithoutDocumentInput = {
+    where: DocumentInvitationWhereUniqueInput
+    update: XOR<DocumentInvitationUpdateWithoutDocumentInput, DocumentInvitationUncheckedUpdateWithoutDocumentInput>
+    create: XOR<DocumentInvitationCreateWithoutDocumentInput, DocumentInvitationUncheckedCreateWithoutDocumentInput>
+  }
+
+  export type DocumentInvitationUpdateWithWhereUniqueWithoutDocumentInput = {
+    where: DocumentInvitationWhereUniqueInput
+    data: XOR<DocumentInvitationUpdateWithoutDocumentInput, DocumentInvitationUncheckedUpdateWithoutDocumentInput>
+  }
+
+  export type DocumentInvitationUpdateManyWithWhereWithoutDocumentInput = {
+    where: DocumentInvitationScalarWhereInput
+    data: XOR<DocumentInvitationUpdateManyMutationInput, DocumentInvitationUncheckedUpdateManyWithoutDocumentInput>
+  }
+
   export type DocumentCreateWithoutCollaboratorsInput = {
     id?: string
     title?: string
@@ -13255,6 +16464,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutOwnedDocumentsInput
     workspace?: WorkspaceCreateNestedOneWithoutDocumentsInput
+    invitations?: DocumentInvitationCreateNestedManyWithoutDocumentInput
   }
 
   export type DocumentUncheckedCreateWithoutCollaboratorsInput = {
@@ -13269,6 +16479,7 @@ export namespace Prisma {
     workspaceId?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    invitations?: DocumentInvitationUncheckedCreateNestedManyWithoutDocumentInput
   }
 
   export type DocumentCreateOrConnectWithoutCollaboratorsInput = {
@@ -13290,6 +16501,8 @@ export namespace Prisma {
     accounts?: AccountCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberCreateNestedManyWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationCreateNestedManyWithoutInviterInput
   }
 
   export type UserUncheckedCreateWithoutCollaborationsInput = {
@@ -13306,6 +16519,8 @@ export namespace Prisma {
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     ownedWorkspaces?: WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
     workspaceMembers?: WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationUncheckedCreateNestedManyWithoutInviterInput
   }
 
   export type UserCreateOrConnectWithoutCollaborationsInput = {
@@ -13336,6 +16551,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutOwnedDocumentsNestedInput
     workspace?: WorkspaceUpdateOneWithoutDocumentsNestedInput
+    invitations?: DocumentInvitationUpdateManyWithoutDocumentNestedInput
   }
 
   export type DocumentUncheckedUpdateWithoutCollaboratorsInput = {
@@ -13350,6 +16566,7 @@ export namespace Prisma {
     workspaceId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    invitations?: DocumentInvitationUncheckedUpdateManyWithoutDocumentNestedInput
   }
 
   export type UserUpsertWithoutCollaborationsInput = {
@@ -13377,6 +16594,8 @@ export namespace Prisma {
     accounts?: AccountUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUpdateManyWithoutInviterNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCollaborationsInput = {
@@ -13393,6 +16612,260 @@ export namespace Prisma {
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     ownedWorkspaces?: WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
     workspaceMembers?: WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUncheckedUpdateManyWithoutInviterNestedInput
+  }
+
+  export type DocumentCreateWithoutInvitationsInput = {
+    id?: string
+    title?: string
+    content?: string | null
+    yjsState?: Buffer | null
+    isPublic?: boolean
+    isArchived?: boolean
+    deletedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    owner: UserCreateNestedOneWithoutOwnedDocumentsInput
+    workspace?: WorkspaceCreateNestedOneWithoutDocumentsInput
+    collaborators?: CollaboratorCreateNestedManyWithoutDocumentInput
+  }
+
+  export type DocumentUncheckedCreateWithoutInvitationsInput = {
+    id?: string
+    title?: string
+    content?: string | null
+    yjsState?: Buffer | null
+    isPublic?: boolean
+    isArchived?: boolean
+    deletedAt?: Date | string | null
+    ownerId: string
+    workspaceId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    collaborators?: CollaboratorUncheckedCreateNestedManyWithoutDocumentInput
+  }
+
+  export type DocumentCreateOrConnectWithoutInvitationsInput = {
+    where: DocumentWhereUniqueInput
+    create: XOR<DocumentCreateWithoutInvitationsInput, DocumentUncheckedCreateWithoutInvitationsInput>
+  }
+
+  export type UserCreateWithoutSentInvitationsInput = {
+    id?: string
+    email: string
+    emailVerified?: Date | string | null
+    name?: string | null
+    image?: string | null
+    passwordHash?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    ownedDocuments?: DocumentCreateNestedManyWithoutOwnerInput
+    collaborations?: CollaboratorCreateNestedManyWithoutUserInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    ownedWorkspaces?: WorkspaceCreateNestedManyWithoutOwnerInput
+    workspaceMembers?: WorkspaceMemberCreateNestedManyWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutSentInvitationsInput = {
+    id?: string
+    email: string
+    emailVerified?: Date | string | null
+    name?: string | null
+    image?: string | null
+    passwordHash?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    ownedDocuments?: DocumentUncheckedCreateNestedManyWithoutOwnerInput
+    collaborations?: CollaboratorUncheckedCreateNestedManyWithoutUserInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    ownedWorkspaces?: WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
+    workspaceMembers?: WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutSentInvitationsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutSentInvitationsInput, UserUncheckedCreateWithoutSentInvitationsInput>
+  }
+
+  export type DocumentUpsertWithoutInvitationsInput = {
+    update: XOR<DocumentUpdateWithoutInvitationsInput, DocumentUncheckedUpdateWithoutInvitationsInput>
+    create: XOR<DocumentCreateWithoutInvitationsInput, DocumentUncheckedCreateWithoutInvitationsInput>
+    where?: DocumentWhereInput
+  }
+
+  export type DocumentUpdateToOneWithWhereWithoutInvitationsInput = {
+    where?: DocumentWhereInput
+    data: XOR<DocumentUpdateWithoutInvitationsInput, DocumentUncheckedUpdateWithoutInvitationsInput>
+  }
+
+  export type DocumentUpdateWithoutInvitationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    content?: NullableStringFieldUpdateOperationsInput | string | null
+    yjsState?: NullableBytesFieldUpdateOperationsInput | Buffer | null
+    isPublic?: BoolFieldUpdateOperationsInput | boolean
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    owner?: UserUpdateOneRequiredWithoutOwnedDocumentsNestedInput
+    workspace?: WorkspaceUpdateOneWithoutDocumentsNestedInput
+    collaborators?: CollaboratorUpdateManyWithoutDocumentNestedInput
+  }
+
+  export type DocumentUncheckedUpdateWithoutInvitationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    content?: NullableStringFieldUpdateOperationsInput | string | null
+    yjsState?: NullableBytesFieldUpdateOperationsInput | Buffer | null
+    isPublic?: BoolFieldUpdateOperationsInput | boolean
+    isArchived?: BoolFieldUpdateOperationsInput | boolean
+    deletedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    ownerId?: StringFieldUpdateOperationsInput | string
+    workspaceId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    collaborators?: CollaboratorUncheckedUpdateManyWithoutDocumentNestedInput
+  }
+
+  export type UserUpsertWithoutSentInvitationsInput = {
+    update: XOR<UserUpdateWithoutSentInvitationsInput, UserUncheckedUpdateWithoutSentInvitationsInput>
+    create: XOR<UserCreateWithoutSentInvitationsInput, UserUncheckedCreateWithoutSentInvitationsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutSentInvitationsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutSentInvitationsInput, UserUncheckedUpdateWithoutSentInvitationsInput>
+  }
+
+  export type UserUpdateWithoutSentInvitationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    ownedDocuments?: DocumentUpdateManyWithoutOwnerNestedInput
+    collaborations?: CollaboratorUpdateManyWithoutUserNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    ownedWorkspaces?: WorkspaceUpdateManyWithoutOwnerNestedInput
+    workspaceMembers?: WorkspaceMemberUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutSentInvitationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    ownedDocuments?: DocumentUncheckedUpdateManyWithoutOwnerNestedInput
+    collaborations?: CollaboratorUncheckedUpdateManyWithoutUserNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    ownedWorkspaces?: WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
+    workspaceMembers?: WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutNotificationsInput = {
+    id?: string
+    email: string
+    emailVerified?: Date | string | null
+    name?: string | null
+    image?: string | null
+    passwordHash?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    ownedDocuments?: DocumentCreateNestedManyWithoutOwnerInput
+    collaborations?: CollaboratorCreateNestedManyWithoutUserInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    ownedWorkspaces?: WorkspaceCreateNestedManyWithoutOwnerInput
+    workspaceMembers?: WorkspaceMemberCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationCreateNestedManyWithoutInviterInput
+  }
+
+  export type UserUncheckedCreateWithoutNotificationsInput = {
+    id?: string
+    email: string
+    emailVerified?: Date | string | null
+    name?: string | null
+    image?: string | null
+    passwordHash?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    ownedDocuments?: DocumentUncheckedCreateNestedManyWithoutOwnerInput
+    collaborations?: CollaboratorUncheckedCreateNestedManyWithoutUserInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    ownedWorkspaces?: WorkspaceUncheckedCreateNestedManyWithoutOwnerInput
+    workspaceMembers?: WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+    sentInvitations?: DocumentInvitationUncheckedCreateNestedManyWithoutInviterInput
+  }
+
+  export type UserCreateOrConnectWithoutNotificationsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutNotificationsInput, UserUncheckedCreateWithoutNotificationsInput>
+  }
+
+  export type UserUpsertWithoutNotificationsInput = {
+    update: XOR<UserUpdateWithoutNotificationsInput, UserUncheckedUpdateWithoutNotificationsInput>
+    create: XOR<UserCreateWithoutNotificationsInput, UserUncheckedCreateWithoutNotificationsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutNotificationsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutNotificationsInput, UserUncheckedUpdateWithoutNotificationsInput>
+  }
+
+  export type UserUpdateWithoutNotificationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    ownedDocuments?: DocumentUpdateManyWithoutOwnerNestedInput
+    collaborations?: CollaboratorUpdateManyWithoutUserNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    ownedWorkspaces?: WorkspaceUpdateManyWithoutOwnerNestedInput
+    workspaceMembers?: WorkspaceMemberUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUpdateManyWithoutInviterNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutNotificationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    ownedDocuments?: DocumentUncheckedUpdateManyWithoutOwnerNestedInput
+    collaborations?: CollaboratorUncheckedUpdateManyWithoutUserNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    ownedWorkspaces?: WorkspaceUncheckedUpdateManyWithoutOwnerNestedInput
+    workspaceMembers?: WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
+    sentInvitations?: DocumentInvitationUncheckedUpdateManyWithoutInviterNestedInput
   }
 
   export type DocumentCreateManyOwnerInput = {
@@ -13452,6 +16925,27 @@ export namespace Prisma {
     joinedAt?: Date | string
   }
 
+  export type NotificationCreateManyUserInput = {
+    id?: string
+    type: $Enums.NotificationType
+    title: string
+    message: string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: boolean
+    createdAt?: Date | string
+  }
+
+  export type DocumentInvitationCreateManyInviterInput = {
+    id?: string
+    documentId: string
+    email: string
+    role?: $Enums.DocumentRole
+    token: string
+    expiresAt: Date | string
+    acceptedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
   export type DocumentUpdateWithoutOwnerInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
@@ -13464,6 +16958,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workspace?: WorkspaceUpdateOneWithoutDocumentsNestedInput
     collaborators?: CollaboratorUpdateManyWithoutDocumentNestedInput
+    invitations?: DocumentInvitationUpdateManyWithoutDocumentNestedInput
   }
 
   export type DocumentUncheckedUpdateWithoutOwnerInput = {
@@ -13478,6 +16973,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     collaborators?: CollaboratorUncheckedUpdateManyWithoutDocumentNestedInput
+    invitations?: DocumentInvitationUncheckedUpdateManyWithoutDocumentNestedInput
   }
 
   export type DocumentUncheckedUpdateManyWithoutOwnerInput = {
@@ -13629,6 +17125,69 @@ export namespace Prisma {
     joinedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type NotificationUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+    title?: StringFieldUpdateOperationsInput | string
+    message?: StringFieldUpdateOperationsInput | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    isRead?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentInvitationUpdateWithoutInviterInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    document?: DocumentUpdateOneRequiredWithoutInvitationsNestedInput
+  }
+
+  export type DocumentInvitationUncheckedUpdateWithoutInviterInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    documentId?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentInvitationUncheckedUpdateManyWithoutInviterInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    documentId?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type WorkspaceMemberCreateManyWorkspaceInput = {
     id?: string
     userId: string
@@ -13682,6 +17241,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutOwnedDocumentsNestedInput
     collaborators?: CollaboratorUpdateManyWithoutDocumentNestedInput
+    invitations?: DocumentInvitationUpdateManyWithoutDocumentNestedInput
   }
 
   export type DocumentUncheckedUpdateWithoutWorkspaceInput = {
@@ -13696,6 +17256,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     collaborators?: CollaboratorUncheckedUpdateManyWithoutDocumentNestedInput
+    invitations?: DocumentInvitationUncheckedUpdateManyWithoutDocumentNestedInput
   }
 
   export type DocumentUncheckedUpdateManyWithoutWorkspaceInput = {
@@ -13717,6 +17278,17 @@ export namespace Prisma {
     role?: $Enums.DocumentRole
     invitedAt?: Date | string
     acceptedAt?: Date | string | null
+  }
+
+  export type DocumentInvitationCreateManyDocumentInput = {
+    id?: string
+    email: string
+    role?: $Enums.DocumentRole
+    token: string
+    inviterId: string
+    expiresAt: Date | string
+    acceptedAt?: Date | string | null
+    createdAt?: Date | string
   }
 
   export type CollaboratorUpdateWithoutDocumentInput = {
@@ -13741,6 +17313,39 @@ export namespace Prisma {
     role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
     invitedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type DocumentInvitationUpdateWithoutDocumentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    inviter?: UserUpdateOneRequiredWithoutSentInvitationsNestedInput
+  }
+
+  export type DocumentInvitationUncheckedUpdateWithoutDocumentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    inviterId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentInvitationUncheckedUpdateManyWithoutDocumentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    role?: EnumDocumentRoleFieldUpdateOperationsInput | $Enums.DocumentRole
+    token?: StringFieldUpdateOperationsInput | string
+    inviterId?: StringFieldUpdateOperationsInput | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    acceptedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 
@@ -13792,6 +17397,14 @@ export namespace Prisma {
      * @deprecated Use CollaboratorDefaultArgs instead
      */
     export type CollaboratorArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = CollaboratorDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use DocumentInvitationDefaultArgs instead
+     */
+    export type DocumentInvitationArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = DocumentInvitationDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use NotificationDefaultArgs instead
+     */
+    export type NotificationArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = NotificationDefaultArgs<ExtArgs>
 
   /**
    * Batch Payload for updateMany & deleteMany & createMany

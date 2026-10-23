@@ -15,6 +15,7 @@ import EditorToolbar from "./EditorToolbar";
 import { CollaborationCursor } from "./collaboration-cursor";
 import { parseDocumentContent } from "@/lib/editor-utils";
 import { relativeTime } from "@/lib/utils";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export type SaveStatus = "saved" | "pending" | "saving" | "failed";
 
@@ -158,7 +159,16 @@ export default function DocumentEditor({
   const [collaborators, setCollaborators] = useState<
     Array<{ id: string; role: string; user: { id: string; name: string | null; email: string } }>
   >([]);
+  const [pendingInvitations, setPendingInvitations] = useState<
+    Array<{ id: string; email: string; role: string; expiresAt: string; token: string }>
+  >([]);
+  const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
+  const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
+  const [isRemovingCollaborator, setIsRemovingCollaborator] = useState<string | null>(null);
+  const [isRevokingInvite, setIsRevokingInvite] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedInviteToken, setCopiedInviteToken] = useState<string | null>(null);
+  const [isAccessRevoked, setIsAccessRevoked] = useState(false);
 
   // Stale request & concurrency protection for title / fallback saves
   const lastKnownUpdatedAtRef = useRef<string>(initialDoc.updatedAt);
@@ -302,6 +312,16 @@ export default function DocumentEditor({
 
         provider.on("status", ({ status }: { status: "connecting" | "connected" | "disconnected" }) => {
           if (isMounted) setCollabStatus(status);
+          if (provider.ws) {
+            const ws = provider.ws;
+            const originalOnClose = ws.onclose;
+            ws.onclose = (event: CloseEvent) => {
+              if (event.code === 4403 && isMounted) {
+                setIsAccessRevoked(true);
+              }
+              if (originalOnClose) originalOnClose.call(ws, event);
+            };
+          }
         });
 
         provider.on("sync", (synced: boolean) => {
@@ -542,28 +562,29 @@ export default function DocumentEditor({
     }
   };
 
-  // Fetch collaborators when modal opens
-  useEffect(() => {
-    if (!isShareModalOpen) return;
-    let isMounted = true;
-
-    async function loadCollaborators() {
-      try {
-        const res = await fetch(`/api/documents/${initialDoc.id}/collaborators`);
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted) setCollaborators(data.collaborators || []);
-        }
-      } catch {
-        // silent fail
+  // Fetch collaborators and pending invitations when modal opens
+  const loadCollaboratorsAndInvites = useCallback(async () => {
+    try {
+      const [collabRes, inviteRes] = await Promise.all([
+        fetch(`/api/documents/${initialDoc.id}/collaborators`),
+        fetch(`/api/documents/${initialDoc.id}/invitations`),
+      ]);
+      if (collabRes.ok) {
+        const data = await collabRes.json();
+        setCollaborators(data.collaborators || []);
       }
+      if (inviteRes.ok) {
+        const data = await inviteRes.json();
+        setPendingInvitations(data.invitations || []);
+      }
+    } catch {
+      // silent fail
     }
-
-    loadCollaborators();
-    return () => {
-      isMounted = false;
-    };
-  }, [isShareModalOpen, initialDoc.id]);
+  }, [initialDoc.id]);
+  const openShareModal = () => {
+    setIsShareModalOpen(true);
+    loadCollaboratorsAndInvites();
+  };
 
   const handleInviteCollaborator = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -571,6 +592,7 @@ export default function DocumentEditor({
 
     setIsSharing(true);
     setShareMessage(null);
+    setGeneratedInviteUrl(null);
 
     try {
       const res = await fetch(`/api/documents/${initialDoc.id}/collaborators`, {
@@ -584,19 +606,92 @@ export default function DocumentEditor({
         throw new Error(data.error || "Failed to add collaborator");
       }
 
-      setShareMessage({ text: `Invited ${shareEmail} as ${shareRole}`, isError: false });
-      setShareEmail("");
-      if (data.collaborator) {
-        setCollaborators((prev) => [
-          ...prev.filter((c) => c.user.id !== data.collaborator.user.id),
-          data.collaborator,
-        ]);
+      setShareMessage({
+        text: data.isExistingUser
+          ? `Invited ${shareEmail} as ${shareRole}`
+          : `Invitation generated for ${shareEmail} as ${shareRole}`,
+        isError: false,
+      });
+
+      if (data.inviteUrl) {
+        setGeneratedInviteUrl(data.inviteUrl);
       }
+
+      setShareEmail("");
+      loadCollaboratorsAndInvites();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to invite";
       setShareMessage({ text: msg, isError: true });
     } finally {
       setIsSharing(false);
+    }
+  };
+
+  const handleUpdateCollaboratorRole = async (targetUserId: string, newRole: "EDITOR" | "VIEWER") => {
+    setIsUpdatingRole(targetUserId);
+    setShareMessage(null);
+    try {
+      const res = await fetch(`/api/documents/${initialDoc.id}/collaborators/${targetUserId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update role");
+      }
+      setCollaborators((prev) =>
+        prev.map((c) => (c.user.id === targetUserId ? { ...c, role: newRole } : c))
+      );
+      setShareMessage({ text: "Collaborator role updated", isError: false });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to update role";
+      setShareMessage({ text: msg, isError: true });
+    } finally {
+      setIsUpdatingRole(null);
+    }
+  };
+
+  const handleRemoveCollaborator = async (targetUserId: string) => {
+    if (!window.confirm("Revoke access for this collaborator?")) return;
+    setIsRemovingCollaborator(targetUserId);
+    setShareMessage(null);
+    try {
+      const res = await fetch(`/api/documents/${initialDoc.id}/collaborators/${targetUserId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to remove collaborator");
+      }
+      setCollaborators((prev) => prev.filter((c) => c.user.id !== targetUserId));
+      setShareMessage({ text: "Collaborator access revoked", isError: false });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to remove collaborator";
+      setShareMessage({ text: msg, isError: true });
+    } finally {
+      setIsRemovingCollaborator(null);
+    }
+  };
+
+  const handleRevokeInvitation = async (invitationId: string) => {
+    setIsRevokingInvite(invitationId);
+    setShareMessage(null);
+    try {
+      const res = await fetch(`/api/documents/${initialDoc.id}/invitations/${invitationId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to revoke invitation");
+      }
+      setPendingInvitations((prev) => prev.filter((i) => i.id !== invitationId));
+      setShareMessage({ text: "Invitation canceled", isError: false });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to revoke invitation";
+      setShareMessage({ text: msg, isError: true });
+    } finally {
+      setIsRevokingInvite(null);
     }
   };
 
@@ -879,6 +974,9 @@ export default function DocumentEditor({
               )}
             </div>
 
+            {/* Notification Bell */}
+            <NotificationBell />
+
             {/* Role Badge */}
             <span className="px-2 py-0.5 rounded text-[10px] uppercase font-semibold tracking-wider bg-brand-500/10 text-brand-300 border border-brand-500/20">
               {initialDoc.userRole}
@@ -889,7 +987,7 @@ export default function DocumentEditor({
               <div className="flex items-center gap-1 border-l border-border-subtle pl-2">
                 <button
                   type="button"
-                  onClick={() => setIsShareModalOpen(true)}
+                  onClick={openShareModal}
                   className="btn btn-ghost text-xs px-2.5 py-1 text-text-muted hover:text-text-primary flex items-center gap-1 font-medium bg-surface-2 hover:bg-surface-3 transition-colors rounded"
                   title="Share document with collaborators"
                 >
@@ -1023,6 +1121,26 @@ export default function DocumentEditor({
           <div suppressHydrationWarning>Last saved {relativeTime(lastSavedTime.toISOString())}</div>
         </div>
 
+        {/* Viewer restriction banner */}
+        {!canEdit && (
+          <div className="mb-4 p-3 rounded-xl bg-surface-1 border border-border-subtle flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-text-secondary">
+              <div className="w-6 h-6 rounded-md bg-brand-500/10 text-brand-400 flex items-center justify-center flex-shrink-0">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+              <span>
+                <strong className="text-text-primary">View-only mode:</strong> You can read this document in real time, but editing is disabled.
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-surface-2 text-text-muted border border-border-subtle flex-shrink-0">
+              Read Only
+            </span>
+          </div>
+        )}
+
         {/* TipTap Rich Text Editor Container */}
         <div className="flex-1 card border border-border-subtle bg-surface-1/40 flex flex-col rounded-xl overflow-hidden shadow-xl">
           {/* Editor Format Toolbar */}
@@ -1042,10 +1160,34 @@ export default function DocumentEditor({
         </div>
       </main>
 
+      {/* Access Revoked Overlay */}
+      {isAccessRevoked && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
+          <div className="card p-6 sm:p-8 max-w-md w-full bg-surface-1 border border-red-500/30 text-center shadow-2xl rounded-2xl space-y-4 animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center mx-auto">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-text-primary">Access Revoked</h2>
+              <p className="text-xs text-text-muted mt-1.5 leading-relaxed">
+                Your permission to access this document has been revoked by the owner.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Link href="/dashboard" className="btn btn-primary text-xs px-5 py-2.5 shadow-lg shadow-brand-primary/20">
+                Return to Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Share Document Modal */}
       {isShareModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="card p-6 max-w-md w-full bg-surface-1 border border-border-normal shadow-2xl rounded-xl space-y-5 animate-in zoom-in-95 duration-150">
+          <div className="card p-6 max-w-lg w-full bg-surface-1 border border-border-normal shadow-2xl rounded-xl space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
               <div className="flex items-center gap-2">
@@ -1056,7 +1198,7 @@ export default function DocumentEditor({
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-text-primary">Share Document</h3>
-                  <p className="text-[11px] text-text-muted truncate max-w-[240px]">{title || "Untitled Document"}</p>
+                  <p className="text-[11px] text-text-muted truncate max-w-[280px]">{title || "Untitled Document"}</p>
                 </div>
               </div>
               <button
@@ -1064,6 +1206,7 @@ export default function DocumentEditor({
                 onClick={() => {
                   setIsShareModalOpen(false);
                   setShareMessage(null);
+                  setGeneratedInviteUrl(null);
                 }}
                 className="btn btn-ghost text-xs p-1 text-text-muted hover:text-text-primary"
               >
@@ -1100,7 +1243,7 @@ export default function DocumentEditor({
 
             {/* Invite by Email Form */}
             <form onSubmit={handleInviteCollaborator} className="space-y-3 pt-2 border-t border-border-subtle">
-              <label className="text-xs font-semibold text-text-secondary block">Invite Collaborator</label>
+              <label className="text-xs font-semibold text-text-secondary block">Invite by Email</label>
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <input
                   type="email"
@@ -1142,12 +1285,40 @@ export default function DocumentEditor({
                   {shareMessage.text}
                 </div>
               )}
+
+              {/* Generated Invitation Link Display */}
+              {generatedInviteUrl && (
+                <div className="p-2.5 rounded-lg bg-surface-2 border border-brand-500/30 space-y-1.5 animate-in fade-in">
+                  <div className="text-[11px] font-semibold text-brand-300 flex items-center gap-1.5">
+                    <span>✉️ Invitation Link Generated</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={generatedInviteUrl}
+                      className="input flex-1 text-[11px] py-1 px-2 bg-surface-1 border-border-subtle text-text-secondary select-all truncate"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedInviteUrl);
+                        setCopiedInviteToken(generatedInviteUrl);
+                        setTimeout(() => setCopiedInviteToken(null), 2000);
+                      }}
+                      className="btn btn-primary text-[11px] py-1 px-2.5 flex-shrink-0"
+                    >
+                      {copiedInviteToken === generatedInviteUrl ? "Copied!" : "Copy Link"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </form>
 
-            {/* Existing Collaborators List */}
+            {/* People with Access List */}
             <div className="space-y-2 pt-2 border-t border-border-subtle">
               <div className="text-xs font-semibold text-text-secondary">People with access</div>
-              <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 text-xs">
+              <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1 text-xs">
                 {/* Document Owner */}
                 {initialDoc.owner && (
                   <div className="flex items-center justify-between p-2 rounded bg-surface-2/60">
@@ -1165,11 +1336,11 @@ export default function DocumentEditor({
                   </div>
                 )}
 
-                {/* Invited Collaborators */}
+                {/* Active Collaborators */}
                 {collaborators.map((c) => (
                   <div
                     key={c.id}
-                    className="flex items-center justify-between p-2 rounded bg-surface-2/60"
+                    className="flex items-center justify-between p-2 rounded bg-surface-2/60 gap-2"
                   >
                     <div className="min-w-0 flex-1 pr-2">
                       <div className="font-medium text-text-primary truncate">
@@ -1179,29 +1350,109 @@ export default function DocumentEditor({
                         {c.user.email}
                       </div>
                     </div>
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                        c.role === "EDITOR"
-                          ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
-                          : "bg-surface-3 text-text-muted border border-border-subtle"
-                      }`}
-                    >
-                      {c.role}
-                    </span>
+
+                    {initialDoc.userRole === "OWNER" ? (
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={c.role}
+                          disabled={isUpdatingRole === c.user.id}
+                          onChange={(e) =>
+                            handleUpdateCollaboratorRole(c.user.id, e.target.value as "EDITOR" | "VIEWER")
+                          }
+                          className="select text-[11px] py-0.5 px-2 bg-surface-1 border-border-subtle text-text-primary rounded"
+                        >
+                          <option value="EDITOR">Editor</option>
+                          <option value="VIEWER">Viewer</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCollaborator(c.user.id)}
+                          disabled={isRemovingCollaborator === c.user.id}
+                          className="btn btn-ghost text-[11px] py-0.5 px-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded"
+                          title="Revoke access"
+                        >
+                          {isRemovingCollaborator === c.user.id ? "..." : "Remove"}
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                          c.role === "EDITOR"
+                            ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                            : "bg-surface-3 text-text-muted border border-border-subtle"
+                        }`}
+                      >
+                        {c.role}
+                      </span>
+                    )}
                   </div>
                 ))}
 
                 {collaborators.length === 0 && (
                   <p className="text-[11px] text-text-muted italic py-1">
-                    No additional collaborators invited yet.
+                    No additional collaborators added yet.
                   </p>
                 )}
               </div>
             </div>
 
+            {/* Pending Invitations List */}
+            {pendingInvitations.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-border-subtle">
+                <div className="text-xs font-semibold text-text-secondary flex items-center justify-between">
+                  <span>Pending Invitations ({pendingInvitations.length})</span>
+                </div>
+                <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 text-xs">
+                  {pendingInvitations.map((inv) => {
+                    const inviteUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${inv.token}`;
+                    return (
+                      <div
+                        key={inv.id}
+                        className="flex items-center justify-between p-2 rounded bg-surface-2/40 border border-border-subtle/50 gap-2"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-text-primary truncate">{inv.email}</div>
+                          <div className="text-[10px] text-text-muted">
+                            Offered: {inv.role} • Expires {relativeTime(inv.expiresAt)}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(inviteUrl);
+                              setCopiedInviteToken(inv.id);
+                              setTimeout(() => setCopiedInviteToken(null), 2000);
+                            }}
+                            className="btn btn-secondary text-[10px] py-0.5 px-2"
+                            title="Copy invitation link"
+                          >
+                            {copiedInviteToken === inv.id ? "Copied!" : "Copy Link"}
+                          </button>
+
+                          {initialDoc.userRole === "OWNER" && (
+                            <button
+                              type="button"
+                              onClick={() => handleRevokeInvitation(inv.id)}
+                              disabled={isRevokingInvite === inv.id}
+                              className="btn btn-ghost text-[10px] py-0.5 px-1.5 text-text-muted hover:text-red-400"
+                              title="Cancel invitation"
+                            >
+                              {isRevokingInvite === inv.id ? "..." : "Revoke"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Note */}
             <p className="text-[10px] text-text-muted pt-1 border-t border-border-subtle">
-              Users invited as Editors can collaborate on this document in real time with live carets and presence.
+              Editors can edit content and title with live collaboration. Viewers have read-only access.
             </p>
           </div>
         </div>

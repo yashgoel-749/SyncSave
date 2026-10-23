@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { getUserWorkspaces } from "@/lib/workspace-service";
 import DashboardView from "@/components/DashboardView";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export const instant = false;
 
@@ -39,6 +40,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-brand-primary/20 border border-brand-primary/30 flex items-center justify-center text-brand-secondary font-medium text-xs">
                 {user.name ? user.name[0]?.toUpperCase() : user.email?.[0]?.toUpperCase()}

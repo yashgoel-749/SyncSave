@@ -202,9 +202,37 @@ exports.Prisma.CollaboratorScalarFieldEnum = {
   acceptedAt: 'acceptedAt'
 };
 
+exports.Prisma.DocumentInvitationScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  email: 'email',
+  role: 'role',
+  token: 'token',
+  inviterId: 'inviterId',
+  expiresAt: 'expiresAt',
+  acceptedAt: 'acceptedAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.NotificationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  title: 'title',
+  message: 'message',
+  data: 'data',
+  isRead: 'isRead',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
 };
 
 exports.Prisma.QueryMode = {
@@ -215,6 +243,12 @@ exports.Prisma.QueryMode = {
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
+};
+
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
 };
 exports.WorkspaceRole = exports.$Enums.WorkspaceRole = {
   OWNER: 'OWNER',
@@ -228,6 +262,14 @@ exports.DocumentRole = exports.$Enums.DocumentRole = {
   VIEWER: 'VIEWER'
 };
 
+exports.NotificationType = exports.$Enums.NotificationType = {
+  DOCUMENT_INVITATION: 'DOCUMENT_INVITATION',
+  INVITATION_ACCEPTED: 'INVITATION_ACCEPTED',
+  ROLE_UPDATED: 'ROLE_UPDATED',
+  ACCESS_REVOKED: 'ACCESS_REVOKED',
+  WORKSPACE_EVENT: 'WORKSPACE_EVENT'
+};
+
 exports.Prisma.ModelName = {
   User: 'User',
   Account: 'Account',
@@ -236,7 +278,9 @@ exports.Prisma.ModelName = {
   Workspace: 'Workspace',
   WorkspaceMember: 'WorkspaceMember',
   Document: 'Document',
-  Collaborator: 'Collaborator'
+  Collaborator: 'Collaborator',
+  DocumentInvitation: 'DocumentInvitation',
+  Notification: 'Notification'
 };
 
 /**
