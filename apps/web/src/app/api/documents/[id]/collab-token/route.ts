@@ -3,15 +3,31 @@ import { auth } from "@/auth";
 import { getDocument } from "@/lib/document-service";
 import { AuthorizationError, NotFoundError } from "@/lib/workspace-service";
 import { signCollabToken, getUserColor } from "@/lib/collab-token";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
+import { webLogger } from "@/lib/logger";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limit: 60 tokens per minute per user/IP
+    const ip = getClientIp(request);
+    const rateKey = `collab-token:${session.user.id}:${ip}`;
+    const limit = process.env.NODE_ENV === "test" ? 100 : 60;
+    const rateCheck = checkRateLimit(rateKey, limit, 60 * 1000);
+
+    if (!rateCheck.success) {
+      webLogger.warn(`Collab token rate limit exceeded for user: ${session.user.id}`);
+      return rateLimitResponse(
+        rateCheck,
+        "Too many token requests. Please try again shortly."
+      );
     }
 
     const { id } = await params;
@@ -50,7 +66,7 @@ export async function GET(
     if (error instanceof NotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
-    console.error("Error generating collab token:", error);
+    webLogger.error("Error generating collab token", error);
     return NextResponse.json(
       { error: "Failed to generate collaboration token" },
       { status: 500 }

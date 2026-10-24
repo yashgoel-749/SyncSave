@@ -1,9 +1,24 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { registerSchema, hashPassword } from "@/lib/auth-utils";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limiter";
+import { webLogger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
+    // Rate limit: 5 registrations per 15 minutes per IP (50 in test)
+    const ip = getClientIp(request);
+    const limit = process.env.NODE_ENV === "test" ? 50 : 5;
+    const rateCheck = checkRateLimit(`register:${ip}`, limit, 15 * 60 * 1000);
+
+    if (!rateCheck.success) {
+      webLogger.warn(`Registration rate limit exceeded for IP: ${ip}`);
+      return rateLimitResponse(
+        rateCheck,
+        "Too many registration attempts. Please try again later."
+      );
+    }
+
     const body = await request.json().catch(() => null);
 
     if (!body) {
@@ -52,6 +67,8 @@ export async function POST(request: Request) {
       },
     });
 
+    webLogger.info("User registered successfully", { userId: user.id });
+
     return NextResponse.json(
       {
         message: "Account created successfully",
@@ -60,7 +77,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    webLogger.error("Registration error", error);
     return NextResponse.json(
       { error: "An unexpected error occurred during registration. Please try again." },
       { status: 500 }

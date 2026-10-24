@@ -22,12 +22,14 @@ export class DocumentManager {
   private initLocks: Map<string, Promise<any>>;
   private persistenceTimers: Map<string, NodeJS.Timeout>;
   private dirtyDocs: Set<string>;
+  private activeFlushes: Map<string, Promise<boolean>>;
 
   constructor() {
     this.docs = utils.docs;
     this.initLocks = new Map();
     this.persistenceTimers = new Map();
     this.dirtyDocs = new Set();
+    this.activeFlushes = new Map();
   }
 
   /**
@@ -62,17 +64,21 @@ export class DocumentManager {
         }
 
         const ydoc = new utils.WSSharedDoc(docId);
+        let hydratedFromBinary = false;
 
         // Load persisted Yjs state if available
         if (docRecord.yjsState && docRecord.yjsState.length > 0) {
           try {
             Y.applyUpdate(ydoc, new Uint8Array(docRecord.yjsState));
+            hydratedFromBinary = true;
             logger.info(`Loaded persisted Yjs state for ${docId} (${docRecord.yjsState.length} bytes)`);
           } catch (err) {
-            logger.error(`Error applying persisted Yjs state for ${docId}:`, err);
+            logger.error(`Error applying persisted Yjs binary state for ${docId}. Attempting fallback hydration.`, err);
           }
-        } else if (docRecord.content) {
-          // Hydrate from initial TipTap JSON if yjsState was empty
+        }
+
+        // Fallback to TipTap JSON if binary was missing or corrupted
+        if (!hydratedFromBinary && docRecord.content) {
           try {
             const parsed = JSON.parse(docRecord.content);
             if (parsed && parsed.type === "doc" && Array.isArray(parsed.content)) {
@@ -80,6 +86,7 @@ export class DocumentManager {
               for (const node of parsed.content) {
                 if (node.type === "paragraph") {
                   const p = new Y.XmlElement("paragraph");
+                  xmlFragment.push([p]);
                   if (Array.isArray(node.content)) {
                     for (const textNode of node.content) {
                       if (textNode.type === "text" && typeof textNode.text === "string") {
@@ -88,12 +95,12 @@ export class DocumentManager {
                       }
                     }
                   }
-                  xmlFragment.push([p]);
                 }
               }
+              logger.info(`Hydrated document ${docId} from TipTap JSON snapshot`);
             }
-          } catch {
-            // Ignore format errors on initial text parse
+          } catch (jsonErr) {
+            logger.warn(`Failed to parse content JSON fallback for ${docId}:`, jsonErr);
           }
         }
 
@@ -134,50 +141,65 @@ export class DocumentManager {
   }
 
   /**
-   * Durably writes document state to PostgreSQL
+   * Durably writes document state to PostgreSQL with sequential ordering guarantee.
+   * If a flush is already active for this docId, queues sequentially to prevent race conditions.
    */
   async flushDocument(docId: string, ydoc: any): Promise<boolean> {
+    // Wait for any existing flush on this doc to complete first to guarantee ordering
+    const existingFlush = this.activeFlushes.get(docId);
+    if (existingFlush) {
+      await existingFlush.catch(() => false);
+    }
+
     if (!this.dirtyDocs.has(docId)) {
       return false;
     }
     this.dirtyDocs.delete(docId);
 
-    try {
-      const stateUpdate = Buffer.from(Y.encodeStateAsUpdate(ydoc));
-      let serializedContent: string | null = null;
-
+    const flushPromise = (async () => {
       try {
-        const pmJson = yDocToProsemirrorJSON(ydoc, "default");
-        if (pmJson && pmJson.content && pmJson.content.length > 0) {
-          serializedContent = JSON.stringify(pmJson);
+        const stateUpdate = Buffer.from(Y.encodeStateAsUpdate(ydoc));
+        let serializedContent: string | null = null;
+
+        try {
+          const pmJson = yDocToProsemirrorJSON(ydoc, "default");
+          if (pmJson && pmJson.content && pmJson.content.length > 0) {
+            serializedContent = JSON.stringify(pmJson);
+          }
+        } catch {
+          // TipTap serialization fallback
         }
-      } catch {
-        // TipTap serialization fallback
+
+        await prisma.document.update({
+          where: { id: docId },
+          data: {
+            yjsState: stateUpdate,
+            ...(serializedContent ? { content: serializedContent } : {}),
+            updatedAt: new Date(),
+          },
+        });
+
+        logger.info(`Durable save complete for ${docId} (${stateUpdate.length} bytes)`);
+        return true;
+      } catch (error) {
+        logger.error(`Failed to persist document ${docId}:`, error);
+        // Re-mark as dirty so next flush attempt will retry
+        this.dirtyDocs.add(docId);
+        return false;
+      } finally {
+        this.activeFlushes.delete(docId);
       }
+    })();
 
-      await prisma.document.update({
-        where: { id: docId },
-        data: {
-          yjsState: stateUpdate,
-          ...(serializedContent ? { content: serializedContent } : {}),
-          updatedAt: new Date(),
-        },
-      });
-
-      logger.info(`Durable save complete for ${docId} (${stateUpdate.length} bytes)`);
-      return true;
-    } catch (error) {
-      logger.error(`Failed to persist document ${docId}:`, error);
-      // Re-mark as dirty so next flush will retry
-      this.dirtyDocs.add(docId);
-      return false;
-    }
+    this.activeFlushes.set(docId, flushPromise);
+    return flushPromise;
   }
 
   /**
    * Flushes all pending documents to PostgreSQL (used on shutdown or disconnects)
    */
   async flushAll(): Promise<void> {
+    // Clear all pending timers and immediately flush
     for (const [, timer] of this.persistenceTimers) {
       clearTimeout(timer);
     }
@@ -190,8 +212,26 @@ export class DocumentManager {
         promises.push(this.flushDocument(docId, ydoc));
       }
     }
+
+    // Also wait for any flushes that were already in-flight
+    for (const inFlight of Array.from(this.activeFlushes.values())) {
+      promises.push(inFlight);
+    }
+
     await Promise.all(promises);
     logger.info("All dirty documents flushed to PostgreSQL.");
+  }
+
+  /**
+   * Health check for database connectivity
+   */
+  async checkDatabaseHealth(): Promise<boolean> {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 

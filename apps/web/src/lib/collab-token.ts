@@ -34,11 +34,14 @@ export function getUserColor(userId: string): string {
 }
 
 export function getCollabSecret(): string {
-  return (
-    process.env.AUTH_SECRET ||
-    process.env.NEXTAUTH_SECRET ||
-    "syncspace-collab-secret-2026"
-  );
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("AUTH_SECRET is required in production environment");
+    }
+    return "syncspace-collab-secret-2026";
+  }
+  return secret;
 }
 
 export function signCollabToken(

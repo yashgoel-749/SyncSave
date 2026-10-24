@@ -36,12 +36,10 @@ export function getUserColor(userId: string): string {
   return PARTICIPANT_COLORS[index];
 }
 
+import { config } from "./config";
+
 export function getCollabSecret(): string {
-  return (
-    process.env.AUTH_SECRET ||
-    process.env.NEXTAUTH_SECRET ||
-    "syncspace-collab-secret-2026"
-  );
+  return config.authSecret;
 }
 
 export function signCollabToken(

@@ -26,11 +26,11 @@ syncsave/
 | 1 | Project Scaffold & Design System | ✅ Done |
 | 2 | Auth (NextAuth.js + Neon) | ✅ Done |
 | 3 | Document CRUD + Dashboard | ✅ Done |
-| 4 | Rich-Text Editor (TipTap) | ⏳ Next |
-| 5 | Real-Time Collaboration (Yjs + WebSockets) | ⏳ Pending |
-| 6 | Offline-First & PWA | ⏳ Pending |
-| 7 | Sharing, Permissions & Notifications | ⏳ Pending |
-| 8 | Production Hardening & CI/CD | ⏳ Pending |
+| 4 | Rich-Text Editor (TipTap) | ✅ Done |
+| 5 | Real-Time Collaboration (Yjs + WebSockets) | ✅ Done |
+| 6 | Offline-First & PWA | ✅ Done |
+| 7 | Sharing, Permissions & Notifications | ✅ Done |
+| 8 | Production Hardening & CI/CD | ✅ Done |
 
 ## Getting Started
 

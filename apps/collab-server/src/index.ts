@@ -1,38 +1,74 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
-
 import * as http from 'http';
+import crypto from 'crypto';
 import { WebSocketServer } from 'ws';
-import { setupWSConnection, revokeUserConnections, updateUserRole } from './yjsHandler';
+import {
+  setupWSConnection,
+  revokeUserConnections,
+  updateUserRole,
+  getActiveConnectionCount,
+  closeAllConnections,
+} from './yjsHandler';
 import { logger } from './logger';
-import { documentManager } from './documentManager';
+import { documentManager, prisma } from './documentManager';
 import { getCollabSecret } from './auth';
+import { config, isOriginAllowed } from './config';
 
-const PORT = parseInt(process.env.PORT ?? '1234', 10);
-const HOST = process.env.HOST ?? '0.0.0.0';
+let isShuttingDown = false;
 
-// Allowed origins — tighten in production via env
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? 'http://localhost:3000')
-  .split(',')
-  .map((o) => o.trim());
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
 
-const server = http.createServer((req, res) => {
-  // Basic health-check endpoint
-  if (req.url === '/health') {
+  // Basic liveness probe
+  if (url.pathname === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', uptime: process.uptime() }));
+    res.end(
+      JSON.stringify({
+        status: 'ok',
+        uptime: process.uptime(),
+        connections: getActiveConnectionCount(),
+        memory: process.memoryUsage(),
+        version: '0.1.0',
+      })
+    );
     return;
   }
 
-  // Internal permission revocation endpoint
-  const url = new URL(req.url || '', 'http://localhost');
+  // Kubernetes / Render readiness probe
+  if (url.pathname === '/ready') {
+    if (isShuttingDown) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'shutting_down' }));
+      return;
+    }
+
+    const isDbHealthy = await documentManager.checkDatabaseHealth();
+    if (!isDbHealthy) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'not_ready', database: 'disconnected' }));
+      return;
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ready', database: 'connected' }));
+    return;
+  }
+
+  // Internal permission revocation and role update endpoints
   const revokeMatch = url.pathname.match(/^\/internal\/rooms\/([^/]+)\/revoke$/);
   const updateRoleMatch = url.pathname.match(/^\/internal\/rooms\/([^/]+)\/update-role$/);
 
   if (req.method === 'POST' && (revokeMatch || updateRoleMatch)) {
     const authHeader = req.headers.authorization;
     const expectedSecret = getCollabSecret();
-    if (!authHeader || authHeader !== `Bearer ${expectedSecret}`) {
+    const expectedHeader = `Bearer ${expectedSecret}`;
+
+    // Timing-safe secret verification to prevent timing attacks
+    const isAuthorized =
+      typeof authHeader === 'string' &&
+      authHeader.length === expectedHeader.length &&
+      crypto.timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedHeader));
+
+    if (!isAuthorized) {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unauthorized' }));
       return;
@@ -85,24 +121,34 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  res.writeHead(404);
-  res.end();
+  res.writeHead(404, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Not found' }));
 });
 
 const wss = new WebSocketServer({
   noServer: true,
-  maxPayload: 10 * 1024 * 1024, // 10 MB max message size
+  maxPayload: config.maxPayloadBytes,
 });
 
 server.on('upgrade', (request, socket, head) => {
-  const origin = request.headers.origin ?? '';
+  if (isShuttingDown) {
+    socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\nServer is shutting down');
+    socket.destroy();
+    return;
+  }
 
-  const isAllowed =
-    process.env.NODE_ENV !== 'production' ||
-    ALLOWED_ORIGINS.includes(origin);
+  // Pre-upgrade server capacity check
+  if (getActiveConnectionCount() >= config.maxConnections) {
+    logger.warn('Rejected WebSocket upgrade: max concurrent connections limit reached');
+    socket.write('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\nServer capacity reached');
+    socket.destroy();
+    return;
+  }
 
-  if (!isAllowed) {
-    logger.warn(`Rejected WebSocket from disallowed origin: ${origin}`);
+  const origin = request.headers.origin;
+  if (!isOriginAllowed(origin)) {
+    logger.warn(`Rejected WebSocket from disallowed origin: ${origin || 'none'}`);
+    socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\nDisallowed origin');
     socket.destroy();
     return;
   }
@@ -117,28 +163,60 @@ wss.on('connection', (ws, req) => {
   setupWSConnection(ws, req);
 });
 
-server.listen(PORT, HOST, () => {
-  logger.info(`SyncSpace collab server listening on ${HOST}:${PORT}`);
-});
+export { server, wss };
 
-// Graceful shutdown
-const shutdown = async (signal: string) => {
-  logger.info(`Received ${signal}, flushing pending updates and shutting down gracefully…`);
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(config.port, config.host, () => {
+    logger.info(`SyncSpace collab server listening on ${config.host}:${config.port} (env: ${config.nodeEnv})`);
+  });
+}
+
+// Graceful shutdown handling
+export const shutdown = async (signal: string) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  logger.info(`Received ${signal}, initiating graceful shutdown…`);
+
+  // Stop accepting new HTTP requests
+  server.close(() => {
+    logger.info('HTTP server closed to new requests.');
+  });
+
+  // Notify and close active WebSockets with status code 1001 (Server going away)
+  const closedCount = closeAllConnections(1001, 'Server shutting down');
+  logger.info(`Closed ${closedCount} active WebSocket connections.`);
+
+  // Flush all dirty Yjs documents to PostgreSQL
   try {
     await documentManager.flushAll();
+    logger.info('All documents successfully flushed to PostgreSQL.');
   } catch (err) {
-    logger.error('Error flushing documents during shutdown:', err);
+    logger.error('Error flushing documents during graceful shutdown:', err);
+  }
+
+  // Disconnect database client
+  try {
+    await prisma.$disconnect();
+    logger.info('Database client disconnected.');
+  } catch (err) {
+    logger.warn('Error disconnecting database client:', err);
   }
 
   wss.close(() => {
-    server.close(() => {
-      logger.info('Server closed. Bye!');
+    logger.info('WebSocket server closed. Graceful shutdown complete.');
+    if (process.env.NODE_ENV !== 'test') {
       process.exit(0);
-    });
+    }
   });
 
-  // Force exit after 10 s if graceful shutdown hangs
-  setTimeout(() => process.exit(1), 10_000).unref();
+  // Safety fallback: force exit after 10 seconds if hanging
+  setTimeout(() => {
+    logger.error('Graceful shutdown timed out after 10s. Forcefully exiting.');
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(1);
+    }
+  }, 10_000).unref();
 };
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));

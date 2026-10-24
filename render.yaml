@@ -1,0 +1,40 @@
+# ====================================================================
+# SyncSpace Render Blueprint Specification
+# Host: Render Web Service (persistent long-running Node.js process)
+# Note: WebSockets require a persistent server with WebSocket support.
+# ====================================================================
+
+services:
+  - type: web
+    name: syncspace-collab-server
+    runtime: node
+    plan: starter
+    region: oregon # Choose region closest to Neon database
+    branch: main
+    buildCommand: npm install && npm run db:generate && npm run build:collab
+    startCommand: npm run start --workspace=apps/collab-server
+    healthCheckPath: /health
+    autoDeploy: false # Explicit manual approval as per deployment policy
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 1234
+      - key: HOST
+        value: 0.0.0.0
+      - key: LOG_LEVEL
+        value: info
+      - key: AUTH_SECRET
+        sync: false # Set securely in Render dashboard
+      - key: DATABASE_URL
+        sync: false # Neon pooled connection string
+      - key: DIRECT_URL
+        sync: false # Neon direct connection string
+      - key: ALLOWED_ORIGINS
+        sync: false # e.g. https://syncspace.vercel.app
+      - key: MAX_CONNECTIONS
+        value: 1000
+      - key: MAX_CONNECTIONS_PER_IP
+        value: 50
+      - key: MESSAGE_RATE_LIMIT_PER_SEC
+        value: 100
