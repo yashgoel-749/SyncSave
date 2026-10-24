@@ -111,7 +111,7 @@ SyncSpace enforces strict environment variable validation. In production, missin
 1. **Service Type**: Web Service (Node.js runtime).
 2. **Build Command**:
    ```bash
-   npm install && npm run db:generate && npm run build:collab
+   npm install --include=dev && npm run db:generate && npm run build:collab
    ```
 3. **Start Command**:
    ```bash

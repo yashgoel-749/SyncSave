@@ -11,7 +11,7 @@ services:
     plan: starter
     region: oregon # Choose region closest to Neon database
     branch: main
-    buildCommand: npm install && npm run db:generate && npm run build:collab
+    buildCommand: npm install --include=dev && npm run db:generate && npm run build:collab
     startCommand: npm run start --workspace=apps/collab-server
     healthCheckPath: /health
     autoDeploy: false # Explicit manual approval as per deployment policy
