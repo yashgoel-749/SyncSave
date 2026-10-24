@@ -26,31 +26,11 @@ export async function GET() {
   } catch (error) {
     webLogger.error("Readiness probe database check failed", error);
 
-    let directResult = "not_tested";
-    if (process.env.DIRECT_URL) {
-      try {
-        const { PrismaClient } = await import("@syncspace/db");
-        const directPrisma = new PrismaClient({
-          datasources: { db: { url: process.env.DIRECT_URL } },
-        });
-        await directPrisma.$queryRaw`SELECT 1`;
-        directResult = "connected";
-        await directPrisma.$disconnect();
-      } catch (directErr) {
-        directResult = directErr instanceof Error ? directErr.message : String(directErr);
-      }
-    }
-
     return NextResponse.json(
       {
         status: "not_ready",
         service: "@syncspace/web",
         database: "disconnected",
-        details: error instanceof Error ? error.message : String(error),
-        directConnectionTest: directResult,
-        hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
-        hasDirectUrl: Boolean(process.env.DIRECT_URL),
-        dbHost: process.env.DATABASE_URL ? process.env.DATABASE_URL.split("@")[1]?.split("/")[0] : null,
         timestamp: new Date().toISOString(),
       },
       {
