@@ -251,6 +251,7 @@ body {
    ============================================= */
 .tiptap-editor-canvas {
   cursor: text;
+  scroll-padding-top: 5rem;
 }
 
 .ProseMirror {
@@ -259,6 +260,7 @@ body {
   color: var(--text-primary);
   font-size: 1rem;
   line-height: 1.75;
+  scroll-margin-top: 5rem;
 }
 
 .ProseMirror p {

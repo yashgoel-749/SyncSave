@@ -58,7 +58,7 @@ export default function EditorToolbar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1 p-2 border-b border-border-subtle bg-surface-1/70 backdrop-blur-md rounded-t-xl sticky top-14 z-20 text-xs">
+    <div className="flex flex-wrap items-center gap-1 p-2 border-b border-border-subtle bg-surface-1 shadow-sm rounded-t-xl sticky top-14 z-20 text-xs">
       {/* History Group */}
       <div className="flex items-center gap-0.5 pr-1.5 border-r border-border-subtle">
         <button

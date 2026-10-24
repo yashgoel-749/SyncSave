@@ -1142,7 +1142,7 @@ export default function DocumentEditor({
         )}
 
         {/* TipTap Rich Text Editor Container */}
-        <div className="flex-1 card border border-border-subtle bg-surface-1/40 flex flex-col rounded-xl overflow-hidden shadow-xl">
+        <div className="flex-1 card border border-border-subtle bg-surface-1 flex flex-col rounded-xl overflow-hidden shadow-xl">
           {/* Editor Format Toolbar */}
           <EditorToolbar editor={editor} readOnly={!canEdit} />
 
