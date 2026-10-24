@@ -99,7 +99,11 @@ export async function createDocumentInvitation(
     });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "https://syncsave.vercel.app");
   const inviteUrl = `${appUrl}/invite/${token}`;
 
   return {

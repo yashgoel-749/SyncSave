@@ -88,7 +88,11 @@ export default async function DocumentPage({
 
   const collabConfig = {
     token: collabToken,
-    serverUrl: process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:1234",
+    serverUrl:
+      process.env.NEXT_PUBLIC_COLLAB_WS_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "wss://syncsave-collab.onrender.com"
+        : "ws://localhost:1234"),
     user: {
       id: session.user.id,
       name: session.user.name || session.user.email?.split("@")[0] || "Anonymous",

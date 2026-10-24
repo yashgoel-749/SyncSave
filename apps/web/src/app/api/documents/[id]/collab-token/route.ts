@@ -44,8 +44,11 @@ export async function GET(
       exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     });
 
-    const serverUrl =
-      process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:1234";
+    const defaultCollabWs =
+      process.env.NODE_ENV === "production"
+        ? "wss://syncsave-collab.onrender.com"
+        : "ws://localhost:1234";
+    const serverUrl = process.env.NEXT_PUBLIC_COLLAB_WS_URL || defaultCollabWs;
 
     return NextResponse.json({
       token,

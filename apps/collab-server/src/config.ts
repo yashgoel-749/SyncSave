@@ -45,7 +45,9 @@ export function loadConfig(): ServerConfig {
     }
   }
 
-  const rawOrigins = process.env.ALLOWED_ORIGINS || 'http://localhost:3000';
+  const rawOrigins =
+    process.env.ALLOWED_ORIGINS ||
+    'http://localhost:3000,https://syncsave.vercel.app';
   const allowedOrigins = rawOrigins
     .split(',')
     .map((o) => normalizeOrigin(o))

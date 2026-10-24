@@ -4,7 +4,11 @@ function getCollabHttpUrl(): string {
   if (process.env.COLLAB_INTERNAL_URL) {
     return process.env.COLLAB_INTERNAL_URL.replace(/\/$/, "");
   }
-  const wsUrl = process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:1234";
+  const defaultWs =
+    process.env.NODE_ENV === "production"
+      ? "wss://syncsave-collab.onrender.com"
+      : "ws://localhost:1234";
+  const wsUrl = process.env.NEXT_PUBLIC_COLLAB_WS_URL || defaultWs;
   return wsUrl.replace(/^ws:\/\//i, "http://").replace(/^wss:\/\//i, "https://").replace(/\/$/, "");
 }
 
