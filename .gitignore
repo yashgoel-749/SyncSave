@@ -10,6 +10,7 @@ build/
 dist/
 .turbo/
 .vercel/
+apps/web/packages/
 
 # Environment files and credentials (ignore all secrets, keep examples)
 .env
