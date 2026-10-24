@@ -16,6 +16,8 @@ if (!fs.existsSync(srcDir)) {
 const destinations = [
   path.join(rootDir, 'apps', 'web', '.next', 'server'),
   path.join(rootDir, 'apps', 'web', 'packages', 'db', 'generated'),
+  path.join(rootDir, 'apps', 'web', '.prisma', 'client'),
+  path.join(rootDir, 'apps', 'web', 'node_modules', '.prisma', 'client'),
   path.join(rootDir, 'apps', 'web', '.next', 'standalone', 'apps', 'web', 'packages', 'db', 'generated'),
 ];
 

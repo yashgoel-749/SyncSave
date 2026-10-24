@@ -11,6 +11,7 @@ dist/
 .turbo/
 .vercel/
 apps/web/packages/
+apps/web/.prisma/
 
 # Environment files and credentials (ignore all secrets, keep examples)
 .env
