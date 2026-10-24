@@ -31,6 +31,10 @@ export async function GET() {
         status: "not_ready",
         service: "@syncspace/web",
         database: "disconnected",
+        details: error instanceof Error ? error.message : String(error),
+        hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+        hasDirectUrl: Boolean(process.env.DIRECT_URL),
+        dbHost: process.env.DATABASE_URL ? process.env.DATABASE_URL.split("@")[1]?.split("/")[0] : null,
         timestamp: new Date().toISOString(),
       },
       {

@@ -78,8 +78,12 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     webLogger.error("Registration error", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred during registration. Please try again.";
     return NextResponse.json(
-      { error: "An unexpected error occurred during registration. Please try again." },
+      { error: message },
       { status: 500 }
     );
   }
