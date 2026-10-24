@@ -13,7 +13,7 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
     "@syncspace/db": "*",
-    "@tailwindcss/turbopack": "^4",
+    "@tailwindcss/turbopack": "^4.3.3",
     "@tiptap/extension-collaboration": "^3.32.0",
     "@tiptap/extension-link": "^3.32.0",
     "@tiptap/extension-underline": "^3.32.0",
@@ -30,12 +30,16 @@
     "next-auth": "^5.0.0-beta.32",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "tailwindcss": "^4",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5",
     "y-indexeddb": "^9.0.12",
     "y-websocket": "^2.1.0",
     "yjs": "^13.6.33",
     "zod": "^4.6.7"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "^1.32.0",
+    "lightningcss-linux-x64-musl": "^1.32.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
