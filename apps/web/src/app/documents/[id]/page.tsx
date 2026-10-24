@@ -6,7 +6,7 @@ import { AuthorizationError, NotFoundError } from "@/lib/workspace-service";
 import { signCollabToken, getUserColor } from "@/lib/collab-token";
 import DocumentEditor from "@/components/editor/DocumentEditor";
 
-export const instant = false;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

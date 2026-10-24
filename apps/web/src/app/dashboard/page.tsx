@@ -6,7 +6,7 @@ import { getUserWorkspaces } from "@/lib/workspace-service";
 import DashboardView from "@/components/DashboardView";
 import { NotificationBell } from "@/components/NotificationBell";
 
-export const instant = false;
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Dashboard — SyncSpace",
