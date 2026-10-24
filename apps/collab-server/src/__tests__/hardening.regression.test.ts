@@ -58,7 +58,7 @@ describe("Milestone 8: Production Hardening, Concurrency & Recovery", () => {
     it("GET /health should return 200 with uptime, connections, and memory", async () => {
       const res = await fetch(`${httpUrl}/health`);
       expect(res.status).toBe(200);
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data.status).toBe("ok");
       expect(typeof data.uptime).toBe("number");
       expect(typeof data.connections).toBe("number");
@@ -69,7 +69,7 @@ describe("Milestone 8: Production Hardening, Concurrency & Recovery", () => {
       (prisma.$queryRaw as jest.Mock).mockResolvedValueOnce([{ 1: 1 }]);
       const res = await fetch(`${httpUrl}/ready`);
       expect(res.status).toBe(200);
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data.status).toBe("ready");
       expect(data.database).toBe("connected");
     });
@@ -78,7 +78,7 @@ describe("Milestone 8: Production Hardening, Concurrency & Recovery", () => {
       (prisma.$queryRaw as jest.Mock).mockRejectedValueOnce(new Error("Connection refused"));
       const res = await fetch(`${httpUrl}/ready`);
       expect(res.status).toBe(503);
-      const data = await res.json();
+      const data = (await res.json()) as any;
       expect(data.status).toBe("not_ready");
       expect(data.database).toBe("disconnected");
     });

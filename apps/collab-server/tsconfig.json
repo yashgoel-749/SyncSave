@@ -13,7 +13,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["node", "ws"]
+    "types": ["node", "ws", "jest"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
