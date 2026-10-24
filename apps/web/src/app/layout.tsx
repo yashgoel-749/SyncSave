@@ -54,10 +54,15 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+import type React from "react";
 import SessionProvider from "@/components/SessionProvider";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="en"
