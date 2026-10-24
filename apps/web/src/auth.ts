@@ -60,6 +60,7 @@ if (githubClientId && githubClientSecret) {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   adapter: PrismaAdapter(prisma as any),
   session: { strategy: "jwt" },
   providers,
