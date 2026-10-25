@@ -177,8 +177,21 @@ export async function handleWSConnection(
       return;
     }
 
+    // Buffer early messages arriving before async document hydration completes
+    const earlyMessages: Array<{ data: any; isBinary: boolean }> = [];
+    const earlyMsgHandler = (data: any, isBinary: boolean) => {
+      earlyMessages.push({ data, isBinary });
+    };
+    ws.on("message", earlyMsgHandler);
+
     // 3. Coordinated first-connection loading (prevents race condition)
-    const ydoc = await documentManager.getOrLoadDocument(docId);
+    let ydoc: any;
+    try {
+      ydoc = await documentManager.getOrLoadDocument(docId);
+    } finally {
+      ws.off("message", earlyMsgHandler);
+    }
+
     if (!ydoc) {
       logger.warn(`WebSocket rejected for ${docId}: document not found or deleted`);
       ws.close(4404, "Document not found or inaccessible");
@@ -266,6 +279,11 @@ export async function handleWSConnection(
 
     // 7. Delegate to y-websocket for Yjs synchronization and Awareness protocol
     yjsSetup(ws, req, { docName: docId });
+
+    // 7b. Replay any early messages received before document loading finished
+    for (const msg of earlyMessages) {
+      ws.emit("message", msg.data, msg.isBinary);
+    }
 
     // 8. On disconnect: cleanup connection registry and flush changes if room is empty
     ws.on("close", () => {

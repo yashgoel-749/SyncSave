@@ -36,6 +36,7 @@ Thumbs.db
 # Testing & Coverage
 coverage/
 .nyc_output/
+scripts/load-test/results/
 
 # Database files
 prisma/migrations/dev.db
