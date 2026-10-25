@@ -11,7 +11,7 @@
     "dev:collab": "npm run dev --workspace=apps/collab-server",
     "build": "npm run db:generate && npm run build --workspace=apps/web",
     "build:collab": "npm run build --workspace=apps/collab-server",
-    "build:all": "npm run db:generate && npm run build:collab && npm run build",
+    "build:all": "npm run build:collab && npm run build",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
