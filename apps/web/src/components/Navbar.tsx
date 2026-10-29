@@ -59,7 +59,7 @@ export function Navbar() {
                   </span>
                 </div>
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={() => signOut({ callbackUrl: "/login" })}
                   className="btn btn-ghost text-sm text-text-muted hover:text-red-400"
                 >
                   Sign out
@@ -139,7 +139,7 @@ export function Navbar() {
                 <button
                   onClick={() => {
                     setOpen(false);
-                    signOut({ callbackUrl: "/" });
+                    signOut({ callbackUrl: "/login" });
                   }}
                   className="btn btn-ghost text-sm text-red-400 justify-start"
                 >

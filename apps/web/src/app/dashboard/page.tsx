@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { getUserWorkspaces } from "@/lib/workspace-service";
 import DashboardView from "@/components/DashboardView";
 import { NotificationBell } from "@/components/NotificationBell";
+import { SignOutButton } from "@/components/SignOutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -55,20 +56,7 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <button
-                type="submit"
-                id="signout-button"
-                className="btn btn-ghost text-xs text-text-muted hover:text-red-400 py-1.5 px-3 border border-border-subtle hover:border-red-500/30 transition-colors"
-              >
-                Sign out
-              </button>
-            </form>
+            <SignOutButton redirectTo="/" />
           </div>
         </div>
       </header>
