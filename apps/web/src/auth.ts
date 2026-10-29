@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import type { Provider } from "next-auth/providers";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
-import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 import prisma from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import { loginSchema, verifyPassword } from "@/lib/auth-utils";
@@ -46,14 +46,15 @@ const providers: Provider[] = [
   }),
 ];
 
-const githubClientId = process.env.GITHUB_CLIENT_ID || process.env.AUTH_GITHUB_ID;
-const githubClientSecret = process.env.GITHUB_CLIENT_SECRET || process.env.AUTH_GITHUB_SECRET;
+const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET;
 
-if (githubClientId && githubClientSecret) {
+if (googleClientId && googleClientSecret) {
   providers.push(
-    GitHub({
-      clientId: githubClientId,
-      clientSecret: githubClientSecret,
+    Google({
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
+      allowDangerousEmailAccountLinking: true,
     })
   );
 }
