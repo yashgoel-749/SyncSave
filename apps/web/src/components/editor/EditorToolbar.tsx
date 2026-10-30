@@ -4,10 +4,13 @@ import React, { useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { sanitizeUrl } from "@/lib/editor-utils";
 import { Modal } from "@/components/ui/Modal";
+import VoiceDictation from "./VoiceDictation";
 
 interface EditorToolbarProps {
   editor: Editor | null;
   readOnly?: boolean;
+  documentId?: string;
+  dictationEnabled?: boolean;
 }
 
 function ToolbarButton({
@@ -52,6 +55,8 @@ function Divider() {
 export default function EditorToolbar({
   editor,
   readOnly = false,
+  documentId,
+  dictationEnabled = false,
 }: EditorToolbarProps) {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
@@ -249,6 +254,8 @@ export default function EditorToolbar({
           </svg>
         </ToolbarButton>
       )}
+
+      {documentId && dictationEnabled && <VoiceDictation key={documentId} editor={editor} documentId={documentId} />}
 
       <div className="ml-auto hidden md:flex items-center">
         <ToolbarButton

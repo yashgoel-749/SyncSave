@@ -70,6 +70,7 @@ SyncSpace employs a decoupled, production-hardened hybrid cloud topology:
 
 - **Real-Time Multi-User Collaboration:** Live cursor tracking, multi-user selections with distinct deterministic participant colors, and sub-20ms broadcast latency.
 - **Rich-Text Editor:** TipTap / ProseMirror engine supporting headings, code blocks, blockquotes, bullet and numbered lists, bold, italics, underline, strikethrough, inline code, horizontal rules and sanitized links, with live word/character counts.
+- **Voice Dictation:** Browser speech recognition with English and Hindi language choices, explicit audio-processing consent, and an editable local preview. Text enters the shared document only after **Insert text**. SyncSpace does not record or store audio; the browser may send audio to its speech provider. Dictation requires HTTPS or localhost, internet access, and a supported browser.
 - **Collaborative Whiteboard:** Every document ships with an infinite, zoomable canvas (pen with stroke smoothing, rectangles, ellipses, lines, arrows, text, eraser). Shapes live in a `Y.Map` inside the same Y.Doc as the text, so they share the document's sync, persistence, offline cache and viewer write-protection. Remote cursors and in-progress strokes are broadcast through Yjs awareness; per-user undo/redo uses a scoped `Y.UndoManager`; boards export to PNG.
 - **Offline-First & PWA Support:** Instant local editing via IndexedDB. Documents load instantly from cache even during network disconnects.
 - **Role-Based Access Control (RBAC):**
@@ -80,6 +81,23 @@ SyncSpace employs a decoupled, production-hardened hybrid cloud topology:
 - **Live Permission Revocation & Role Updates:** Internal secure webhook endpoints allow immediate live eviction (`4403`) or real-time downgrade to `VIEWER` without requiring users to refresh.
 - **Durable Persistence Engine:** In-memory CRDT updates are debounced (1500ms delay) and sequentially serialized into PostgreSQL binary storage (`BYTEA`), preventing database write stampedes while ensuring 0% data loss on server restarts.
 - **Security Hardening:** Origin filtering, per-IP connection limits (50/IP), WebSocket message rate limiting (100 msg/sec per socket), timing-safe HMAC token verification, and soft-delete trash recovery.
+
+---
+
+### Use voice dictation
+
+1. Open a document that you can edit and click **Dictate** in the text toolbar.
+2. Read the audio-processing notice and select the consent checkbox.
+3. Choose a language and click **Start listening**.
+4. Allow microphone access when your browser asks.
+5. Click **Stop listening**, then correct the transcript preview.
+6. Click **Insert text** to add the preview after the current selection without deleting selected content.
+
+Closing the dialog, pressing Escape, or clicking **Discard** stops listening and discards the preview. Listening also stops when the tab is hidden, the browser goes offline, you enable manual offline mode, or you switch to the whiteboard. Opening another document discards the previous dictation session. Each session lasts up to 90 seconds, with a three-second finalization timeout. The preview holds up to 10,000 characters.
+
+The client checks server permissions before listening and insertion, and every 15 seconds during an active session. Failed checks stop listening or block insertion. Access revocation received through the collaboration connection disables editing and closes dictation. Server-side write restrictions remain authoritative.
+
+No speech API key, new dependency, or database migration is required. Language support and transcription accuracy depend on the browser's speech service. Automated dictation tests use a simulated speech service with real TipTap and Yjs bindings; actual microphone permission and transcription require a manual check in a supported browser.
 
 ---
 
