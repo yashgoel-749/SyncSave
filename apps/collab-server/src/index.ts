@@ -6,6 +6,7 @@ import {
   revokeUserConnections,
   updateUserRole,
   getActiveConnectionCount,
+  getActiveRoomCount,
   closeAllConnections,
 } from './yjsHandler';
 import { logger } from './logger';
@@ -26,6 +27,8 @@ const server = http.createServer(async (req, res) => {
         status: 'ok',
         uptime: process.uptime(),
         connections: getActiveConnectionCount(),
+        rooms: getActiveRoomCount(),
+        residentDocuments: documentManager.getResidentDocumentCount(),
         memory: process.memoryUsage(),
         version: '0.1.0',
       })

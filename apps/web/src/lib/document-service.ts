@@ -7,6 +7,12 @@ import {
 } from "./workspace-service";
 import type { DocumentQueryParams } from "./document-schemas";
 import type { Prisma, DocumentRole } from "@syncspace/db";
+import { extractPlainText } from "./editor-utils";
+
+/** Documents touched within this window are shown under the "Recent" filter. */
+const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+/** Max characters of plain-text preview shipped to the dashboard. */
+const PREVIEW_LENGTH = 160;
 
 export async function verifyDocumentAccess(
   documentId: string,
@@ -99,6 +105,9 @@ export async function listDocuments(userId: string, options: DocumentQueryParams
       where.isArchived = true;
     } else {
       where.isArchived = false;
+      if (filter === "recent") {
+        where.updatedAt = { gte: new Date(Date.now() - RECENT_WINDOW_MS) };
+      }
     }
   }
 
@@ -112,21 +121,44 @@ export async function listDocuments(userId: string, options: DocumentQueryParams
 
   const skip = (page - 1) * limit;
 
-  // Run total count and document fetch in parallel
-  const [total, documents] = await prisma.$transaction([
+  // Run total count and document fetch in parallel.
+  // Note: the binary Yjs state is deliberately NOT selected – it can be hundreds of KB per
+  // document and the list view only needs metadata plus a short text preview.
+  const [total, rows] = await prisma.$transaction([
     prisma.document.count({ where }),
     prisma.document.findMany({
       where,
       skip,
       take: limit,
       orderBy: { updatedAt: "desc" },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        isPublic: true,
+        isArchived: true,
+        deletedAt: true,
+        ownerId: true,
+        workspaceId: true,
+        createdAt: true,
+        updatedAt: true,
         owner: { select: { id: true, name: true, email: true } },
         workspace: { select: { id: true, name: true } },
         _count: { select: { collaborators: true } },
       },
     }),
   ]);
+
+  const documents = (rows as Array<Record<string, unknown>>).map((doc) => {
+    if (!("content" in doc)) return doc;
+    const { content, ...rest } = doc;
+    return {
+      ...rest,
+      preview: extractPlainText(typeof content === "string" ? content : null, {
+        maxLength: PREVIEW_LENGTH,
+      }),
+    };
+  });
 
   return {
     documents,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import {
-  getInvitationByToken,
+  describeInvitation,
   acceptDocumentInvitation,
   InvitationError,
 } from "@/lib/invitation-service";
@@ -27,9 +27,13 @@ export async function GET(
     }
 
     const { token } = await params;
-    const invitation = await getInvitationByToken(token);
+    const { invitation, alreadyAccepted, requiresSignIn, guestSignInAvailable } =
+      await describeInvitation(token);
 
     return NextResponse.json({
+      alreadyAccepted,
+      requiresSignIn,
+      guestSignInAvailable,
       invitation: {
         id: invitation.id,
         email: invitation.email,

@@ -113,6 +113,149 @@ export async function createDocumentInvitation(
   };
 }
 
+/** A user record with just enough to tell a guest account from a full one. */
+type AccountShape = { id: string; email: string; name: string | null; image: string | null; passwordHash: string | null; accounts: Array<{ id: string }> };
+
+/**
+ * Guest accounts are created from invitation links: no password and no OAuth
+ * provider linked. Only these may be signed in (or claimed) via an invitation token.
+ */
+export function isGuestAccount(user: { passwordHash: string | null; accounts?: Array<{ id: string }> } | null | undefined): boolean {
+  if (!user) return false;
+  return user.passwordHash === null && (user.accounts ?? []).length === 0;
+}
+
+function displayNameFromEmail(email: string): string {
+  const local = email.split("@")[0] || "Guest";
+  return local
+    .replace(/[._-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export interface InvitationAccessInfo {
+  invitation: NonNullable<Awaited<ReturnType<typeof prisma.documentInvitation.findUnique>>> & {
+    document: { id: string; title: string; workspace: { id: string; name: string } | null };
+    inviter: { id: string; name: string | null; email: string };
+  };
+  /** The invitation was already accepted. */
+  alreadyAccepted: boolean;
+  /** The invited email belongs to a full account (password or OAuth) and must sign in normally. */
+  requiresSignIn: boolean;
+  /** The invitee can enter straight from the link, without creating an account. */
+  guestSignInAvailable: boolean;
+}
+
+/**
+ * Describes what the invite page should offer for a token: pending vs accepted,
+ * and whether the invitee can join as a guest or has to sign in.
+ */
+export async function describeInvitation(token: string): Promise<InvitationAccessInfo> {
+  if (!token || typeof token !== "string") {
+    throw new InvitationError("Invalid invitation token", "INVALID_TOKEN");
+  }
+
+  const invitation = await prisma.documentInvitation.findUnique({
+    where: { token },
+    include: {
+      document: { select: { id: true, title: true, workspace: { select: { id: true, name: true } } } },
+      inviter: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  if (!invitation) {
+    throw new NotFoundError("Invitation not found");
+  }
+
+  const user = (await prisma.user.findUnique({
+    where: { email: invitation.email },
+    select: { id: true, email: true, name: true, image: true, passwordHash: true, accounts: { select: { id: true } } },
+  })) as AccountShape | null;
+  const guest = isGuestAccount(user);
+  const hasFullAccount = Boolean(user) && !guest;
+
+  if (invitation.acceptedAt) {
+    // A guest can keep using the link as their way back in, as long as access was not revoked.
+    if (user && guest) {
+      const collaborator = await prisma.collaborator.findUnique({
+        where: { documentId_userId: { documentId: invitation.documentId, userId: user.id } },
+      });
+      if (collaborator) {
+        return { invitation, alreadyAccepted: true, requiresSignIn: false, guestSignInAvailable: true };
+      }
+    }
+    throw new InvitationError("This invitation has already been accepted", "ALREADY_ACCEPTED");
+  }
+
+  if (new Date() > invitation.expiresAt) {
+    throw new InvitationError("This invitation has expired", "EXPIRED");
+  }
+
+  return {
+    invitation,
+    alreadyAccepted: false,
+    requiresSignIn: hasFullAccount,
+    guestSignInAvailable: !hasFullAccount,
+  };
+}
+
+/**
+ * Signs an invitee in using only the invitation token (passwordless guest access).
+ *
+ * - New email: a guest account is created, the invitation is accepted, the user is returned.
+ * - Existing guest account: the link doubles as a magic link while the collaborator record exists.
+ * - Existing full account (password or OAuth): returns null — the owner of that account must
+ *   sign in normally so an invitation link can never take over a real account.
+ *
+ * Returns the minimal user shape NextAuth expects from a Credentials provider, or null.
+ */
+export async function signInWithInvitationToken(
+  token: string
+): Promise<{ id: string; email: string; name: string | null; image: string | null } | null> {
+  if (!token || typeof token !== "string") return null;
+
+  const invitation = await prisma.documentInvitation.findUnique({ where: { token } });
+  if (!invitation) return null;
+
+  let user = (await prisma.user.findUnique({
+    where: { email: invitation.email },
+    select: { id: true, email: true, name: true, image: true, passwordHash: true, accounts: { select: { id: true } } },
+  })) as AccountShape | null;
+
+  if (user && !isGuestAccount(user)) {
+    return null;
+  }
+
+  if (invitation.acceptedAt) {
+    if (!user) return null;
+    const collaborator = await prisma.collaborator.findUnique({
+      where: { documentId_userId: { documentId: invitation.documentId, userId: user.id } },
+    });
+    if (!collaborator) return null; // access was revoked
+    return { id: user.id, email: user.email, name: user.name, image: user.image };
+  }
+
+  if (new Date() > invitation.expiresAt) return null;
+
+  if (!user) {
+    const created = await prisma.user.create({
+      data: {
+        email: invitation.email,
+        name: displayNameFromEmail(invitation.email),
+        passwordHash: null,
+      },
+      select: { id: true, email: true, name: true, image: true, passwordHash: true },
+    });
+    user = { ...created, accounts: [] };
+  }
+
+  await acceptDocumentInvitation(token, user.id);
+
+  return { id: user.id, email: user.email, name: user.name, image: user.image };
+}
+
 /**
  * Retrieves invitation metadata for acceptance verification preview.
  */

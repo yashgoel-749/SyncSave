@@ -79,6 +79,79 @@ export function parseDocumentContent(
   };
 }
 
+const BLOCK_NODE_TYPES = new Set([
+  "paragraph",
+  "heading",
+  "blockquote",
+  "codeBlock",
+  "listItem",
+  "bulletList",
+  "orderedList",
+  "taskItem",
+  "horizontalRule",
+  "hardBreak",
+]);
+
+/**
+ * Walks a TipTap/ProseMirror JSON tree and returns its plain-text content.
+ * Block boundaries become single spaces (or newlines when `preserveLineBreaks`),
+ * runs of whitespace are collapsed, and the result is trimmed.
+ *
+ * Accepts either a parsed document or the raw string stored in the database.
+ */
+export function extractPlainText(
+  source: string | TipTapDocument | TipTapNode | null | undefined,
+  options: { preserveLineBreaks?: boolean; maxLength?: number } = {}
+): string {
+  if (!source) return "";
+
+  const root: TipTapNode | TipTapDocument =
+    typeof source === "string" ? parseDocumentContent(source) : source;
+
+  const separator = options.preserveLineBreaks ? "\n" : " ";
+  const parts: string[] = [];
+
+  const walk = (node: TipTapNode | TipTapDocument): void => {
+    if (!node || typeof node !== "object") return;
+    if (node.type === "text" && typeof (node as TipTapNode).text === "string") {
+      parts.push((node as TipTapNode).text as string);
+      return;
+    }
+    if (node.type === "hardBreak") {
+      parts.push(separator);
+      return;
+    }
+    const children = node.content;
+    if (Array.isArray(children)) {
+      for (const child of children) walk(child);
+    }
+    if (BLOCK_NODE_TYPES.has(node.type)) {
+      parts.push(separator);
+    }
+  };
+
+  walk(root);
+
+  let text = parts.join("");
+  text = options.preserveLineBreaks
+    ? text.replace(/[ \t]+/g, " ").replace(/\n{2,}/g, "\n").trim()
+    : text.replace(/\s+/g, " ").trim();
+
+  if (options.maxLength && text.length > options.maxLength) {
+    text = text.slice(0, options.maxLength - 1).trimEnd() + "…";
+  }
+  return text;
+}
+
+/**
+ * Counts words in a plain-text string (unicode aware, ignores punctuation-only tokens).
+ */
+export function countWords(text: string): number {
+  if (!text) return 0;
+  const matches = text.match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu);
+  return matches ? matches.length : 0;
+}
+
 /**
  * Sanitizes and validates a URL to prevent javascript: or unsafe schemes.
  * Only allows http://, https://, mailto:, and relative URLs.

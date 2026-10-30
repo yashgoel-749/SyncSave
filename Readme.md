@@ -69,12 +69,14 @@ SyncSpace employs a decoupled, production-hardened hybrid cloud topology:
 ## 3. Core Features
 
 - **Real-Time Multi-User Collaboration:** Live cursor tracking, multi-user selections with distinct deterministic participant colors, and sub-20ms broadcast latency.
-- **Rich-Text Engineering Editor:** TipTap / ProseMirror engine supporting headings, code blocks, task lists, blockquotes, tables, bullet lists, bold, italics, underline, and links.
+- **Rich-Text Editor:** TipTap / ProseMirror engine supporting headings, code blocks, blockquotes, bullet and numbered lists, bold, italics, underline, strikethrough, inline code, horizontal rules and sanitized links, with live word/character counts.
+- **Collaborative Whiteboard:** Every document ships with an infinite, zoomable canvas (pen with stroke smoothing, rectangles, ellipses, lines, arrows, text, eraser). Shapes live in a `Y.Map` inside the same Y.Doc as the text, so they share the document's sync, persistence, offline cache and viewer write-protection. Remote cursors and in-progress strokes are broadcast through Yjs awareness; per-user undo/redo uses a scoped `Y.UndoManager`; boards export to PNG.
 - **Offline-First & PWA Support:** Instant local editing via IndexedDB. Documents load instantly from cache even during network disconnects.
 - **Role-Based Access Control (RBAC):**
   - `OWNER`: Full administrative control, document deletion, workspace management, and collaborator invitation.
   - `EDITOR`: Full collaborative read/write permissions.
   - `VIEWER`: Read-only access enforced at both the UI and WebSocket network protocol layer (client modification frames are rejected at the server socket).
+- **Frictionless Invitations (guest access):** Inviting an email that has no account produces a link that opens the document instantly — the invitee joins as a passwordless guest account via a dedicated `invite-token` credentials provider, and the invitation is accepted in the same step. The link keeps working as that guest's magic link until their access is revoked. Existing full accounts (password or OAuth) can never be entered through a link; they sign in normally. A guest can later set a password on the sign-up page to claim the account.
 - **Live Permission Revocation & Role Updates:** Internal secure webhook endpoints allow immediate live eviction (`4403`) or real-time downgrade to `VIEWER` without requiring users to refresh.
 - **Durable Persistence Engine:** In-memory CRDT updates are debounced (1500ms delay) and sequentially serialized into PostgreSQL binary storage (`BYTEA`), preventing database write stampedes while ensuring 0% data loss on server restarts.
 - **Security Hardening:** Origin filtering, per-IP connection limits (50/IP), WebSocket message rate limiting (100 msg/sec per socket), timing-safe HMAC token verification, and soft-delete trash recovery.
@@ -109,11 +111,13 @@ SyncSpace employs a decoupled, production-hardened hybrid cloud topology:
 
 ### C. Storage & Persistence Strategy
 - **In-Memory Buffer:** Active rooms are maintained in Node.js process memory (`utils.docs`), enabling microsecond read/write operations during live editing.
+- **Idle Room Eviction:** When the last client leaves a room the document is flushed and, after a grace period (`DOC_EVICTION_GRACE_MS`, default 30s), released from memory. Reconnects inside the window reuse the hot copy; later connects rehydrate from PostgreSQL. This keeps resident memory proportional to *active* rooms rather than every document ever opened.
+- **Schema-Aware Hydration:** If the binary state is missing or corrupt, the server rebuilds the Y.Doc from the ProseMirror JSON snapshot using the same TipTap schema as the client (headings, lists, marks and links survive), falling back to plain paragraphs only if the snapshot contains unknown nodes.
 - **Debounced Flush:** When edits occur, a 1500ms debounce timer is scheduled (`documentManager.scheduleSave`).
 - **Sequential Flushes (`activeFlushes` Queue):** If a durable save is already writing to PostgreSQL for a given document, subsequent flushes queue behind the active promise, guaranteeing strict sequential ordering and preventing write-after-write database races.
 - **Dual-State Persistence:**
   - `yjsState` (`BYTEA`): Full binary CRDT update state preserving all client clocks and edit histories for flawless hydration.
-  - `content` (`TEXT`): Serialized ProseMirror JSON backup, enabling direct full-text search, preview generation, and schema fallback.
+  - `content` (`TEXT`): Serialized ProseMirror JSON backup, enabling preview generation and schema fallback. The dashboard list endpoint never ships `yjsState` or raw `content`; it returns a server-computed plain-text `preview`.
 
 ### D. Offline-First Recovery & Deterministic Merging
 - When offline, edits are saved to the browser's IndexedDB via `y-indexeddb`.
@@ -156,7 +160,7 @@ SyncSpace includes a repeatable, CLI load testing suite in `scripts/load-test/`.
 | Layer | Technology | Purpose |
 |---|---|---|
 | **Web Frontend** | Next.js 16.4.2 (Turbopack), React 19.3 | Server components, client interactivity, routing, SSR |
-| **Styling** | Tailwind CSS v4 | Curated dark/light theme, modern typography, responsive design |
+| **Styling** | Tailwind CSS v4 | Token-based dark design system (`globals.css`), motion primitives, responsive layout |
 | **Editor** | TipTap 3, ProseMirror | Extensible rich-text editing engine |
 | **CRDT Engine** | Yjs 13.6, `y-websocket`, `y-indexeddb` | Conflict-free real-time sync and local client cache |
 | **Collab Server** | Node.js 20, `ws` 8.18 | Stateful WebSocket server, presence, rate limiting |
@@ -176,9 +180,12 @@ syncsave/
 │   ├── web/                         # Next.js 16 Web Application (Vercel)
 │   │   ├── src/
 │   │   │   ├── app/                 # App Router (Pages, Layouts, API endpoints)
-│   │   │   ├── components/          # React components (Editor, Toolbar, Dashboard)
-│   │   │   ├── hooks/               # Custom hooks (useOfflineSync, useDebounce)
-│   │   │   └── lib/                 # Auth options, services, Prisma client, schemas
+│   │   │   ├── components/          # React components
+│   │   │   │   ├── editor/          # TipTap editor, toolbar, collaboration cursors
+│   │   │   │   ├── whiteboard/      # Yjs-backed whiteboard canvas and shape renderer
+│   │   │   │   └── ui/              # Modal & ConfirmDialog primitives
+│   │   │   └── lib/                 # Auth options, services, Prisma client, schemas,
+│   │   │                            #   editor-utils (text extraction), whiteboard-utils (geometry)
 │   │   └── package.json
 │   └── collab-server/               # WebSocket Collaboration Server (Render)
 │       ├── src/
@@ -269,7 +276,7 @@ Visit `http://localhost:3000` to register an account and start collaborating.
 SyncSpace includes a 100% automated test suite spanning unit, integration, role restriction, and performance benchmarks:
 
 ```bash
-# Run all monorepo test suites (17 suites, 156 tests)
+# Run all monorepo test suites (20 suites, 198 tests)
 npm test
 
 # Run TypeScript typechecks across all workspaces
@@ -320,6 +327,8 @@ For comprehensive disaster recovery, rollback runbooks, and zero-downtime mainte
    - Converting large documents (500KB+) from Yjs CRDT to ProseMirror JSON during database flushes runs on the Node event loop. Debounced saves (1500ms) and the `activeFlushes` sequential queue protect against write stampedes, but documents over 2MB should offload JSON serialization to a Node worker thread.
 3. **Per-IP Connection Throttling:**
    - The default `MAX_CONNECTIONS_PER_IP=50` protects against denial-of-service floods. In enterprise NAT environments or schools where hundreds of users share a single public IP, this environment variable should be raised to `200+`.
+4. **Whiteboard Granularity:**
+   - Shapes are stored as whole JSON values in a `Y.Map`, so two people moving the *same* shape at the same instant resolve last-writer-wins at the shape level (text and strokes never conflict because each shape has a unique id). Finer-grained per-attribute merging would require nested `Y.Map`s per shape at the cost of larger updates.
 
 ---
 

@@ -1,5 +1,5 @@
 // SyncSpace Service Worker - Safe Caching Strategy for PWA and Offline Support
-const CACHE_NAME = 'syncspace-static-v1';
+const CACHE_NAME = 'syncspace-static-v2';
 const OFFLINE_URL = '/offline.html';
 
 // Critical static assets to cache on installation

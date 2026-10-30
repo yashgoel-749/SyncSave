@@ -6,6 +6,7 @@ import Google from "next-auth/providers/google";
 import prisma from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import { loginSchema, verifyPassword } from "@/lib/auth-utils";
+import { signInWithInvitationToken } from "@/lib/invitation-service";
 
 const providers: Provider[] = [
   Credentials({
@@ -42,6 +43,20 @@ const providers: Provider[] = [
         name: user.name,
         image: user.image,
       };
+    },
+  }),
+  // Passwordless guest access from an invitation link. The token is a 32-byte random
+  // secret that only the invitee receives; it can never sign in to a full account.
+  Credentials({
+    id: "invite-token",
+    name: "Invitation link",
+    credentials: {
+      token: { label: "Invitation token", type: "text" },
+    },
+    async authorize(credentials) {
+      const token = typeof credentials?.token === "string" ? credentials.token : "";
+      if (!token) return null;
+      return signInWithInvitationToken(token);
     },
   }),
 ];

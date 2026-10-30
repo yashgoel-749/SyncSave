@@ -1,12 +1,12 @@
 {
   "name": "SyncSpace",
   "short_name": "SyncSpace",
-  "description": "Real-time collaborative and offline-first document workspace",
+  "description": "Real-time collaborative documents and whiteboards, offline-first",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#090d16",
-  "theme_color": "#3b82f6",
+  "background_color": "#0b0d14",
+  "theme_color": "#6d5ae6",
   "icons": [
     {
       "src": "/file.svg",
