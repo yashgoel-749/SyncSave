@@ -41,12 +41,36 @@ export async function POST(request: Request) {
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
+      include: { accounts: { select: { id: true } } },
     });
 
     if (existingUser) {
+      // Guest accounts (created from an invitation link) have no password and no OAuth
+      // provider; registering with that email upgrades them to a full account.
+      const isClaimableGuest =
+        existingUser.passwordHash === null && (existingUser.accounts ?? []).length === 0;
+
+      if (!isClaimableGuest) {
+        return NextResponse.json(
+          { error: "An account with this email address already exists" },
+          { status: 409 }
+        );
+      }
+
+      const claimed = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          passwordHash: await hashPassword(password),
+          ...(name ? { name: name.trim() } : {}),
+        },
+        select: { id: true, name: true, email: true, image: true, createdAt: true },
+      });
+
+      webLogger.info("Guest account claimed with a password", { userId: claimed.id });
+
       return NextResponse.json(
-        { error: "An account with this email address already exists" },
-        { status: 409 }
+        { message: "Account activated successfully", user: claimed, claimedGuest: true },
+        { status: 201 }
       );
     }
 
@@ -78,12 +102,9 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     webLogger.error("Registration error", error);
-    const message =
-      error instanceof Error
-        ? error.message
-        : "An unexpected error occurred during registration. Please try again.";
+    // Never surface raw database/driver messages to clients.
     return NextResponse.json(
-      { error: message },
+      { error: "An unexpected error occurred during registration. Please try again." },
       { status: 500 }
     );
   }

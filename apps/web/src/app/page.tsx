@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "SyncSpace — Collaborative Documents, Offline-First",
+  title: "SyncSpace — Collaborative Documents & Whiteboards, Offline-First",
 };
 
 /* ── Feature data ── */
@@ -16,16 +16,25 @@ const FEATURES = [
     description:
       "See every keystroke as it happens. Presence cursors with colored names let you know exactly who's editing what.",
     gradient: "from-brand-500 to-brand-700",
-    glow: "shadow-[0_0_30px_hsl(246_68%_56%/0.3)]",
+    glow: "hover:shadow-[0_0_30px_hsl(246_68%_56%/0.3)]",
+  },
+  {
+    id: "whiteboard",
+    icon: <PenIcon />,
+    title: "Shared Whiteboard",
+    description:
+      "Every document ships with an infinite canvas. Sketch, drop shapes and notes, and watch teammates draw live.",
+    gradient: "from-accent-500 to-brand-500",
+    glow: "hover:shadow-[0_0_30px_hsl(160_74%_48%/0.25)]",
   },
   {
     id: "offline",
     icon: <WifiOffIcon />,
     title: "Offline-First",
     description:
-      "No internet? No problem. Keep editing — SyncSpace queues your changes and syncs them the moment you're back online.",
-    gradient: "from-accent-500 to-brand-500",
-    glow: "shadow-[0_0_30px_hsl(160_74%_48%/0.25)]",
+      "No internet? No problem. Keep editing — SyncSpace queues your changes on-device and syncs them the moment you're back online.",
+    gradient: "from-brand-700 to-brand-500",
+    glow: "hover:shadow-[0_0_30px_hsl(246_62%_39%/0.3)]",
   },
   {
     id: "crdt",
@@ -33,35 +42,26 @@ const FEATURES = [
     title: "Conflict-Free Merging",
     description:
       "Built on Yjs CRDTs. No merge conflicts, no data loss. Multiple editors can work simultaneously without stepping on each other.",
-    gradient: "from-brand-700 to-brand-500",
-    glow: "shadow-[0_0_30px_hsl(246_62%_39%/0.3)]",
+    gradient: "from-brand-400 to-accent-500",
+    glow: "hover:shadow-[0_0_30px_hsl(246_76%_65%/0.25)]",
   },
   {
     id: "rich",
     icon: <TextIcon />,
     title: "Rich Text Editing",
     description:
-      "Powered by TipTap — headings, lists, code blocks, tables, mentions, and more. A proper writing experience, not a textarea.",
-    gradient: "from-brand-400 to-accent-500",
-    glow: "shadow-[0_0_30px_hsl(246_76%_65%/0.25)]",
+      "Powered by TipTap — headings, lists, quotes, code blocks and links with keyboard shortcuts. A proper writing experience, not a textarea.",
+    gradient: "from-brand-600 to-brand-400",
+    glow: "hover:shadow-[0_0_30px_hsl(246_64%_47%/0.25)]",
   },
   {
     id: "secure",
     icon: <ShieldIcon />,
     title: "Secure by Default",
     description:
-      "End-to-end authenticated sessions, role-based access control, and rate-limited APIs. Your documents belong to you.",
-    gradient: "from-brand-600 to-brand-400",
-    glow: "shadow-[0_0_30px_hsl(246_64%_47%/0.25)]",
-  },
-  {
-    id: "pwa",
-    icon: <DevicesIcon />,
-    title: "Works Everywhere",
-    description:
-      "Installable PWA. Works on desktop, tablet, and mobile. One codebase, one experience, every device.",
+      "Signed collaboration tokens, role-based access control with instant revocation, and rate-limited APIs. Your documents belong to you.",
     gradient: "from-accent-400 to-brand-600",
-    glow: "shadow-[0_0_30px_hsl(160_80%_60%/0.2)]",
+    glow: "hover:shadow-[0_0_30px_hsl(160_80%_60%/0.2)]",
   },
 ];
 
@@ -80,10 +80,17 @@ const HOW_IT_WORKS = [
   },
   {
     step: "03",
-    title: "Edit together, sync everywhere",
+    title: "Write and sketch together",
     description:
-      "Real-time cursors, offline editing, instant sync. Your team always stays in step.",
+      "Real-time cursors in the text and on the whiteboard, offline editing, instant sync.",
   },
+];
+
+const WHITEBOARD_POINTS = [
+  { title: "Pen, shapes, arrows and text", body: "Freehand ink with smoothing, rectangles, ellipses, lines and sticky text." },
+  { title: "Live cursors and strokes", body: "See collaborators' pointers and in-progress strokes before they lift the pen." },
+  { title: "Infinite, zoomable canvas", body: "Pan with space-drag, pinch or Ctrl+scroll to zoom, fit to content in one key." },
+  { title: "Undo, export, persist", body: "Per-user undo history, one-click PNG export, and the same offline-first sync as the document." },
 ];
 
 /* ── Page ── */
@@ -98,7 +105,6 @@ export default function LandingPage() {
           aria-labelledby="hero-heading"
           className="relative min-h-dvh flex items-center mesh-bg overflow-hidden pt-16"
         >
-          {/* Decorative orbs */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-brand-600/10 blur-[120px]"
@@ -109,13 +115,11 @@ export default function LandingPage() {
           />
 
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-28 sm:py-36 text-center">
-            {/* Badge */}
             <div className="animate-fade-up inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-sm text-text-secondary mb-8 border border-brand-700/40">
               <span className="inline-block w-2 h-2 rounded-full bg-accent-500 animate-pulse-ring" />
-              Now in beta — free while we build
+              New: a shared whiteboard in every document
             </div>
 
-            {/* Heading */}
             <h1
               id="hero-heading"
               className="animate-fade-up-delay-1 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-none mb-6"
@@ -126,17 +130,15 @@ export default function LandingPage() {
               </span>
             </h1>
 
-            {/* Sub */}
             <p className="animate-fade-up-delay-2 text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto mb-12 leading-relaxed">
               SyncSpace is the offline-first collaborative editor built for
-              modern teams. Real-time, conflict-free, and fast — even without
-              Wi-Fi.
+              modern teams. Write, sketch and sync in real time — conflict-free, and fast
+              even without Wi-Fi.
             </p>
 
-            {/* CTA buttons */}
             <div className="animate-fade-up-delay-3 flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
-                href="/auth/signup"
+                href="/register"
                 id="hero-cta-primary"
                 className="btn btn-primary text-base px-8 py-4 animate-pulse-ring"
               >
@@ -152,9 +154,8 @@ export default function LandingPage() {
               </a>
             </div>
 
-            {/* Social proof */}
             <p className="animate-fade-up-delay-4 mt-10 text-sm text-text-muted">
-              No credit card required · Works offline · Open source friendly
+              No credit card required · Works offline · Free during beta
             </p>
 
             {/* Editor preview card */}
@@ -164,7 +165,6 @@ export default function LandingPage() {
                   <EditorMockup />
                 </div>
               </div>
-              {/* Floating presence badge */}
               <div
                 aria-hidden="true"
                 className="absolute -top-4 -right-4 sm:-right-8 glass rounded-full px-3 py-1.5 text-xs text-text-secondary flex items-center gap-2 border border-border-subtle animate-float"
@@ -184,7 +184,7 @@ export default function LandingPage() {
         <section
           id="features"
           aria-labelledby="features-heading"
-          className="py-28 sm:py-36 bg-surface-1"
+          className="py-28 sm:py-36 bg-surface-1 scroll-mt-16"
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
@@ -196,11 +196,11 @@ export default function LandingPage() {
                 className="text-4xl sm:text-5xl font-bold tracking-tight mb-5"
               >
                 Everything you need to{" "}
-                <span className="gradient-text">write together</span>
+                <span className="gradient-text">work together</span>
               </h2>
               <p className="text-text-secondary text-lg max-w-2xl mx-auto">
                 A thoughtfully designed set of primitives that gets out of your
-                way and lets your team focus on the words.
+                way and lets your team focus on the ideas.
               </p>
             </div>
 
@@ -208,7 +208,7 @@ export default function LandingPage() {
               {FEATURES.map((f) => (
                 <article
                   key={f.id}
-                  className={`glass rounded-2xl p-8 transition-all duration-300 hover:${f.glow} hover:-translate-y-1 group`}
+                  className={`glass rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 group ${f.glow}`}
                 >
                   <div
                     className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.gradient} flex items-center justify-center mb-5 text-white group-hover:scale-110 transition-transform duration-300`}
@@ -227,11 +227,58 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ════ WHITEBOARD ════ */}
+        <section
+          id="whiteboard"
+          aria-labelledby="whiteboard-heading"
+          className="py-28 sm:py-36 relative overflow-hidden scroll-mt-16"
+        >
+          <div aria-hidden="true" className="absolute inset-0 dot-grid opacity-60" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-surface-0 via-transparent to-surface-0" />
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <p className="text-sm font-semibold text-accent-500 uppercase tracking-widest mb-3">
+                Whiteboard
+              </p>
+              <h2 id="whiteboard-heading" className="text-4xl sm:text-5xl font-bold tracking-tight mb-5">
+                Think out loud,{" "}
+                <span className="gradient-text">in the same room</span>
+              </h2>
+              <p className="text-text-secondary text-lg leading-relaxed mb-10">
+                Flip any document into a shared canvas. It lives in the same CRDT as your
+                text, so it syncs, persists and works offline exactly the same way.
+              </p>
+              <ul className="space-y-5">
+                {WHITEBOARD_POINTS.map((p) => (
+                  <li key={p.title} className="flex gap-4">
+                    <span className="mt-1 w-6 h-6 rounded-full bg-accent-500/15 text-accent-400 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    <div>
+                      <h3 className="font-semibold text-text-primary">{p.title}</h3>
+                      <p className="text-sm text-text-secondary">{p.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="relative">
+              <div className="gradient-border rounded-2xl p-px">
+                <div className="rounded-2xl overflow-hidden bg-surface-1 shadow-2xl">
+                  <WhiteboardMockup />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ════ HOW IT WORKS ════ */}
         <section
           id="how-it-works"
           aria-labelledby="how-heading"
-          className="py-28 sm:py-36 mesh-bg relative overflow-hidden"
+          className="py-28 sm:py-36 mesh-bg relative overflow-hidden scroll-mt-16"
         >
           <div
             aria-hidden="true"
@@ -252,7 +299,6 @@ export default function LandingPage() {
             </div>
 
             <div className="relative grid md:grid-cols-3 gap-10">
-              {/* Connector line (desktop) */}
               <div
                 aria-hidden="true"
                 className="hidden md:block absolute top-10 left-[calc(33.33%+1rem)] right-[calc(33.33%+1rem)] h-0.5 bg-gradient-to-r from-brand-600 via-brand-400 to-accent-500"
@@ -260,7 +306,6 @@ export default function LandingPage() {
 
               {HOW_IT_WORKS.map(({ step, title, description }) => (
                 <div key={step} className="flex flex-col items-center text-center">
-                  {/* Step number */}
                   <div className="relative w-20 h-20 mb-8">
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 opacity-20 animate-pulse" />
                     <div className="relative w-full h-full rounded-2xl glass flex items-center justify-center border border-brand-700/50">
@@ -302,7 +347,7 @@ export default function LandingPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link
-                    href="/auth/signup"
+                    href="/register"
                     id="cta-section-primary"
                     className="btn btn-primary text-base px-10 py-4"
                   >
@@ -334,6 +379,14 @@ function ZapIcon() {
   return (
     <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  );
+}
+
+function PenIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
     </svg>
   );
 }
@@ -380,15 +433,6 @@ function ShieldIcon() {
   );
 }
 
-function DevicesIcon() {
-  return (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-      <line x1="12" y1="18" x2="12.01" y2="18" />
-    </svg>
-  );
-}
-
 function AvatarDot({ color }: { color: string }) {
   return (
     <span
@@ -402,7 +446,6 @@ function AvatarDot({ color }: { color: string }) {
 function EditorMockup() {
   return (
     <div className="bg-surface-2 text-left p-0">
-      {/* Window chrome */}
       <div className="flex items-center gap-2 px-4 py-3 bg-surface-3 border-b border-border-subtle">
         <span className="w-3 h-3 rounded-full bg-red-500/70" />
         <span className="w-3 h-3 rounded-full bg-yellow-500/70" />
@@ -417,23 +460,24 @@ function EditorMockup() {
         </div>
       </div>
 
-      {/* Toolbar */}
       <div className="flex items-center gap-1 px-4 py-2 border-b border-border-subtle text-text-muted text-xs">
         {["B", "I", "U", "|", "H1", "H2", "|", "≡", "⋮"].map((t, i) => (
-          <button
+          <span
             key={i}
-            className={`px-2 py-1 rounded hover:bg-surface-4 transition-colors ${
-              t === "|" ? "opacity-20 cursor-default" : ""
+            className={`px-2 py-1 rounded ${
+              t === "|" ? "opacity-20" : ""
             } ${t === "B" ? "font-bold text-brand-400 bg-surface-3" : ""}`}
-            tabIndex={-1}
             aria-hidden="true"
           >
             {t}
-          </button>
+          </span>
         ))}
+        <span className="ml-auto segmented text-[10px]" aria-hidden="true">
+          <span className="px-2 py-0.5 rounded-md bg-surface-4 text-text-primary">Document</span>
+          <span className="px-2 py-0.5 text-text-muted">Whiteboard</span>
+        </span>
       </div>
 
-      {/* Doc content */}
       <div className="px-8 py-8 min-h-[240px] sm:min-h-[320px] font-sans">
         <div className="max-w-2xl mx-auto space-y-4">
           <div className="text-2xl font-bold text-text-primary">
@@ -447,7 +491,6 @@ function EditorMockup() {
               while maintaining our velocity on the core product.
             </p>
           </div>
-          {/* Fake cursor 1 */}
           <div className="flex items-center gap-1">
             <span
               className="inline-block w-0.5 h-5 bg-brand-500 animate-pulse rounded-full"
@@ -460,7 +503,6 @@ function EditorMockup() {
               We should also revisit pricing tiers—
             </span>
           </div>
-          {/* Fake cursor 2 */}
           <div className="text-sm text-text-secondary">
             Key initiatives:{" "}
             <span className="text-accent-500 font-medium">Auth revamp</span>,{" "}
@@ -475,6 +517,62 @@ function EditorMockup() {
             </span>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Whiteboard mockup (static SVG) ── */
+function WhiteboardMockup() {
+  return (
+    <div className="relative bg-surface-0 dot-grid aspect-[4/3]" aria-hidden="true">
+      <svg viewBox="0 0 480 360" className="absolute inset-0 w-full h-full" fill="none">
+        {/* sticky note */}
+        <rect x="52" y="60" width="140" height="92" rx="10" fill="hsl(43 96% 56% / 0.16)" stroke="#fbbf24" strokeWidth="3" />
+        <text x="70" y="94" fill="#fde68a" fontSize="14" fontWeight="600" fontFamily="Inter, system-ui, sans-serif">Launch plan</text>
+        <text x="70" y="116" fill="#fde68a" fontSize="12" fontFamily="Inter, system-ui, sans-serif">beta → GA</text>
+        {/* arrow */}
+        <path d="M196 106 C 250 106, 260 200, 300 200" stroke="#8b7cf6" strokeWidth="4" strokeLinecap="round" />
+        <path d="M288 190 L300 200 L288 210" stroke="#8b7cf6" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        {/* ellipse */}
+        <ellipse cx="360" cy="200" rx="64" ry="40" stroke="#34d399" strokeWidth="4" fill="hsl(160 74% 48% / 0.12)" />
+        <text x="330" y="205" fill="#a7f3d0" fontSize="13" fontWeight="600" fontFamily="Inter, system-ui, sans-serif">Users</text>
+        {/* freehand stroke */}
+        <path d="M70 250 Q 110 210 150 250 T 230 250 T 310 300" stroke="#f4f4f5" strokeWidth="4" strokeLinecap="round" />
+        {/* remote cursors */}
+        <g transform="translate(300 120)">
+          <path d="M 0 0 L 0 16 L 4.5 12.5 L 8 19 L 10.5 18 L 7 11.5 L 12.5 11.5 Z" fill="#34d399" stroke="#0b0d14" />
+          <rect x="14" y="14" width="38" height="18" rx="4" fill="#34d399" />
+          <text x="20" y="26.5" fontSize="11" fontWeight="600" fill="#fff" fontFamily="Inter, system-ui, sans-serif">Sam</text>
+        </g>
+        <g transform="translate(150 290)">
+          <path d="M 0 0 L 0 16 L 4.5 12.5 L 8 19 L 10.5 18 L 7 11.5 L 12.5 11.5 Z" fill="#f59e0b" stroke="#0b0d14" />
+          <rect x="14" y="14" width="40" height="18" rx="4" fill="#f59e0b" />
+          <text x="20" y="26.5" fontSize="11" fontWeight="600" fill="#fff" fontFamily="Inter, system-ui, sans-serif">Alex</text>
+        </g>
+      </svg>
+      {/* tool rail */}
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 p-1.5 rounded-xl glass">
+        {["V", "P", "R", "O", "T"].map((k, i) => (
+          <span
+            key={k}
+            className={`w-7 h-7 rounded-lg text-[10px] font-bold flex items-center justify-center ${
+              i === 1 ? "bg-brand-500 text-white" : "text-text-muted"
+            }`}
+          >
+            {k}
+          </span>
+        ))}
+      </div>
+      <div className="absolute right-3 top-3 px-2 py-1 rounded-lg glass text-[10px] font-mono text-text-secondary">100%</div>
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-3 flex items-center gap-1.5 px-3 py-2 rounded-xl glass">
+        {["#f4f4f5", "#8b7cf6", "#34d399", "#60a5fa", "#fbbf24", "#f472b6"].map((c, i) => (
+          <span
+            key={c}
+            className={`w-4 h-4 rounded-full ${i === 1 ? "ring-2 ring-white" : ""}`}
+            style={{ backgroundColor: c }}
+          />
+        ))}
       </div>
     </div>
   );

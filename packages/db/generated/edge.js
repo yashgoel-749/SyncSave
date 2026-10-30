@@ -261,7 +261,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\goely\\OneDrive\\Desktop\\syncsave\\packages\\db\\generated",
+      "value": "C:\\code\\projects\\SyncSave\\packages\\db\\generated",
       "fromEnvVar": null
     },
     "config": {
@@ -283,12 +283,11 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\goely\\OneDrive\\Desktop\\syncsave\\packages\\db\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\code\\projects\\SyncSave\\packages\\db\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../prisma",
   "clientVersion": "5.22.0",
@@ -297,7 +296,6 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {

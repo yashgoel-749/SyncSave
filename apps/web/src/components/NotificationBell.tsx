@@ -14,6 +14,9 @@ export interface NotificationItem {
   createdAt: string;
 }
 
+/** Fallback polling cadence when Server-Sent Events are blocked by a proxy. */
+const POLL_INTERVAL_MS = 45_000;
+
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -21,49 +24,40 @@ export function NotificationBell() {
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch notifications & unread count
-  const fetchNotifications = useCallback(async () => {
+  const applyPayload = useCallback((data: { notifications?: NotificationItem[]; unreadCount?: number } | null) => {
+    if (!data) return;
+    setNotifications(data.notifications || []);
+    setUnreadCount(data.unreadCount || 0);
+  }, []);
+
+  // Loads the latest notifications; resolves to null on any failure (offline, tests, 401)
+  const loadNotifications = useCallback(async () => {
     try {
-      setIsLoading(true);
-      const baseUrl = typeof window !== "undefined" && window.location?.origin ? window.location.origin : "";
-      const res = await fetch(`${baseUrl}/api/notifications?limit=25`);
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
+      const res = await fetch(`/api/notifications?limit=25`);
+      if (!res.ok) return null;
+      return (await res.json()) as { notifications?: NotificationItem[]; unreadCount?: number };
     } catch {
-      // silent fail during tests/offline
-    } finally {
-      setIsLoading(false);
+      return null;
     }
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    const baseUrl = typeof window !== "undefined" && window.location?.origin ? window.location.origin : "";
+    let cancelled = false;
+    loadNotifications().then((data) => {
+      if (!cancelled) applyPayload(data);
+    });
 
-    fetch(`${baseUrl}/api/notifications?limit=25`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (isMounted && data) {
-          setNotifications(data.notifications || []);
-          setUnreadCount(data.unreadCount || 0);
-        }
-      })
-      .catch(() => {});
-
-    // Setup Server-Sent Events (SSE) for real-time notification delivery
+    // Server-Sent Events for real-time delivery
     let eventSource: EventSource | null = null;
     if (typeof window !== "undefined" && typeof EventSource !== "undefined") {
       try {
-        const sseUrl = window.location?.origin || "";
-        eventSource = new EventSource(`${sseUrl}/api/notifications/stream`);
-
+        eventSource = new EventSource(`/api/notifications/stream`);
         eventSource.addEventListener("notification", (event) => {
           try {
-            const newNotification: NotificationItem = JSON.parse(event.data);
-            setNotifications((prev) => [newNotification, ...prev]);
+            const incoming: NotificationItem = JSON.parse((event as MessageEvent).data);
+            setNotifications((prev) =>
+              prev.some((n) => n.id === incoming.id) ? prev : [incoming, ...prev]
+            );
             setUnreadCount((prev) => prev + 1);
           } catch (e) {
             console.warn("Failed to parse incoming notification SSE:", e);
@@ -74,32 +68,36 @@ export function NotificationBell() {
       }
     }
 
-    // Fallback polling every 45s in case SSE is blocked by proxies
+    // Fallback polling in case SSE is blocked by proxies
     const pollInterval = setInterval(() => {
-      fetchNotifications();
-    }, 45000);
+      loadNotifications().then((data) => {
+        if (!cancelled) applyPayload(data);
+      });
+    }, POLL_INTERVAL_MS);
 
     return () => {
-      isMounted = false;
+      cancelled = true;
       clearInterval(pollInterval);
-      if (eventSource) {
-        eventSource.close();
-      }
+      eventSource?.close();
     };
-  }, [fetchNotifications]);
+  }, [loadNotifications, applyPayload]);
 
-  // Close dropdown on click outside
+  // Close dropdown on click outside / Escape
   useEffect(() => {
+    if (!isOpen) return;
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsOpen(false);
     }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKey);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKey);
     };
   }, [isOpen]);
 
@@ -116,14 +114,14 @@ export function NotificationBell() {
   };
 
   const markSingleAsRead = async (id: string) => {
+    const target = notifications.find((n) => n.id === id);
+    if (!target || target.isRead) return;
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+    setUnreadCount((prev) => Math.max(0, prev - 1));
     try {
       await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch {
-      // silent fail
+      // keep optimistic state; the periodic refresh will reconcile
     }
   };
 
@@ -181,10 +179,15 @@ export function NotificationBell() {
         onClick={() => {
           setIsOpen(!isOpen);
           if (!isOpen) {
-            fetchNotifications();
+            setIsLoading(true);
+            loadNotifications()
+              .then(applyPayload)
+              .finally(() => setIsLoading(false));
           }
         }}
-        aria-label="View notifications"
+        aria-label={unreadCount > 0 ? `View notifications (${unreadCount} unread)` : "View notifications"}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
         className="relative p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-2/60 transition-colors"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,7 +202,7 @@ export function NotificationBell() {
         {unreadCount > 0 && (
           <span
             id="notification-unread-badge"
-            className="absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-brand-primary text-[10px] font-bold text-white shadow-sm animate-in zoom-in-75"
+            className="absolute top-1 right-1 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-brand-500 text-[10px] font-bold text-white shadow-sm animate-in zoom-in-75"
           >
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
@@ -210,16 +213,15 @@ export function NotificationBell() {
       {isOpen && (
         <div
           id="notification-dropdown-menu"
-          className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-bg-card border border-border-subtle shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+          role="menu"
+          className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-surface-1 border border-border-normal shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-bg-surface/50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-surface-2/50">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-xs text-text-primary">Notifications</span>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-brand-500/10 text-brand-300">
-                  {unreadCount} new
-                </span>
+                <span className="badge badge-brand">{unreadCount} new</span>
               )}
             </div>
 
@@ -227,7 +229,7 @@ export function NotificationBell() {
               <button
                 type="button"
                 onClick={markAllAsRead}
-                className="text-[11px] text-brand-primary hover:text-brand-secondary transition-colors font-medium"
+                className="text-[11px] text-brand-400 hover:text-brand-300 transition-colors font-medium"
               >
                 Mark all read
               </button>
@@ -237,7 +239,17 @@ export function NotificationBell() {
           {/* List */}
           <div className="max-h-[380px] overflow-y-auto divide-y divide-border-subtle/50">
             {isLoading && notifications.length === 0 ? (
-              <div className="p-8 text-center text-xs text-text-muted">Loading notifications...</div>
+              <div className="p-4 space-y-3">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="flex gap-3">
+                    <div className="skeleton w-7 h-7 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <div className="skeleton h-3 w-1/2" />
+                      <div className="skeleton h-3 w-5/6" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center text-xs text-text-muted space-y-1">
                 <p className="font-medium text-text-secondary">All caught up!</p>
@@ -247,10 +259,10 @@ export function NotificationBell() {
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  onClick={() => !n.isRead && markSingleAsRead(n.id)}
+                  onClick={() => markSingleAsRead(n.id)}
                   className={`p-3.5 flex items-start gap-3 transition-colors ${
-                    n.isRead ? "bg-bg-card/40 opacity-80" : "bg-surface-1/70"
-                  } hover:bg-surface-2/60 cursor-pointer`}
+                    n.isRead ? "opacity-75" : "bg-surface-2/40"
+                  } hover:bg-surface-2/70 cursor-pointer`}
                 >
                   {getNotificationIcon(n.type)}
 
@@ -271,7 +283,6 @@ export function NotificationBell() {
                       {n.message}
                     </p>
 
-                    {/* Action buttons if applicable */}
                     {typeof n.data?.inviteToken === "string" && !n.isRead && (
                       <div className="mt-2 flex items-center gap-2">
                         <Link
@@ -280,9 +291,9 @@ export function NotificationBell() {
                             markSingleAsRead(n.id);
                             setIsOpen(false);
                           }}
-                          className="btn btn-primary text-[11px] py-1 px-2.5 rounded shadow-sm"
+                          className="btn btn-primary text-[11px] py-1 px-2.5 rounded-md shadow-sm"
                         >
-                          Accept Invitation
+                          Accept invitation
                         </Link>
                       </div>
                     )}
@@ -295,16 +306,16 @@ export function NotificationBell() {
                             markSingleAsRead(n.id);
                             setIsOpen(false);
                           }}
-                          className="text-[11px] font-medium text-brand-primary hover:underline inline-flex items-center gap-1"
+                          className="text-[11px] font-medium text-brand-400 hover:text-brand-300 hover:underline inline-flex items-center gap-1"
                         >
-                          Open Document →
+                          Open document →
                         </Link>
                       </div>
                     )}
                   </div>
 
                   {!n.isRead && (
-                    <span className="w-2 h-2 rounded-full bg-brand-primary flex-shrink-0 mt-1" />
+                    <span className="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0 mt-1" aria-label="Unread" />
                   )}
                 </div>
               ))

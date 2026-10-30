@@ -1,24 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { LogoLink } from "@/components/Logo";
 import { NotificationBell } from "@/components/NotificationBell";
 
 const NAV_LINKS = [
   { href: "/#features", label: "Features" },
+  { href: "/#whiteboard", label: "Whiteboard" },
   { href: "/#how-it-works", label: "How it works" },
-  { href: "/#pricing", label: "Pricing" },
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { data: session, status } = useSession();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <header
-      className="fixed top-0 inset-x-0 z-50 glass border-b border-border-subtle"
+      className={`fixed top-0 inset-x-0 z-50 glass transition-shadow duration-300 ${
+        scrolled ? "shadow-lg shadow-black/30 border-b border-border-subtle" : "border-b border-transparent"
+      }`}
       role="banner"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -45,15 +55,15 @@ export function Navbar() {
           {/* CTA / Auth State */}
           <div className="hidden md:flex items-center gap-3">
             {status === "loading" ? (
-              <div className="h-8 w-20 bg-bg-card/50 rounded-lg animate-pulse" />
+              <div className="skeleton h-8 w-24 rounded-lg" />
             ) : session?.user ? (
               <div className="flex items-center gap-3">
                 <NotificationBell />
                 <Link href="/dashboard" className="btn btn-ghost text-sm">
                   Dashboard
                 </Link>
-                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-xs text-text-primary">
-                  <div className="w-2 h-2 rounded-full bg-accent-emerald animate-pulse" />
+                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-xs text-text-primary">
+                  <div className="w-2 h-2 rounded-full bg-accent-500 animate-pulse" />
                   <span className="max-w-[120px] truncate font-medium">
                     {session.user.name || session.user.email}
                   </span>
@@ -112,7 +122,7 @@ export function Navbar() {
       <div
         id="mobile-menu"
         className={`md:hidden border-t border-border-subtle overflow-hidden transition-all duration-300 ${
-          open ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
+          open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <nav className="flex flex-col p-4 gap-2" aria-label="Mobile navigation">

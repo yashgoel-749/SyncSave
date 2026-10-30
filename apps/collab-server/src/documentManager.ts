@@ -3,7 +3,14 @@ dotenv.config();
 
 import * as Y from "yjs";
 import { PrismaClient } from "@syncspace/db";
-import { yDocToProsemirrorJSON } from "@tiptap/y-tiptap";
+import { getSchema } from "@tiptap/core";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import {
+  yDocToProsemirrorJSON,
+  prosemirrorJSONToYXmlFragment,
+} from "@tiptap/y-tiptap";
 import { logger } from "./logger";
 
 // y-websocket ships utils as CJS
@@ -17,10 +24,25 @@ export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
 });
 
+/**
+ * ProseMirror schema mirroring the client editor configuration. Used to hydrate
+ * a Yjs document faithfully (headings, lists, marks, links…) from the TipTap JSON
+ * snapshot when no binary Yjs state exists or it is corrupt.
+ */
+const editorSchema = getSchema([
+  StarterKit.configure({ undoRedo: false, heading: { levels: [1, 2, 3] } }),
+  Underline,
+  Link.configure({ openOnClick: false }),
+]);
+
+/** Delay before an idle (empty) room is released from memory. */
+const EVICTION_GRACE_MS = parseInt(process.env.DOC_EVICTION_GRACE_MS || "30000", 10);
+
 export class DocumentManager {
   public docs: Map<string, any>;
   private initLocks: Map<string, Promise<any>>;
   private persistenceTimers: Map<string, NodeJS.Timeout>;
+  private evictionTimers: Map<string, NodeJS.Timeout>;
   private dirtyDocs: Set<string>;
   private activeFlushes: Map<string, Promise<boolean>>;
 
@@ -28,6 +50,7 @@ export class DocumentManager {
     this.docs = utils.docs;
     this.initLocks = new Map();
     this.persistenceTimers = new Map();
+    this.evictionTimers = new Map();
     this.dirtyDocs = new Set();
     this.activeFlushes = new Map();
   }
@@ -42,6 +65,7 @@ export class DocumentManager {
     // 1. In memory
     const existing = this.docs.get(docId);
     if (existing) {
+      this.cancelEviction(docId);
       return existing;
     }
 
@@ -79,29 +103,7 @@ export class DocumentManager {
 
         // Fallback to TipTap JSON if binary was missing or corrupted
         if (!hydratedFromBinary && docRecord.content) {
-          try {
-            const parsed = JSON.parse(docRecord.content);
-            if (parsed && parsed.type === "doc" && Array.isArray(parsed.content)) {
-              const xmlFragment = ydoc.getXmlFragment("default");
-              for (const node of parsed.content) {
-                if (node.type === "paragraph") {
-                  const p = new Y.XmlElement("paragraph");
-                  xmlFragment.push([p]);
-                  if (Array.isArray(node.content)) {
-                    for (const textNode of node.content) {
-                      if (textNode.type === "text" && typeof textNode.text === "string") {
-                        const t = new Y.XmlText(textNode.text);
-                        p.push([t]);
-                      }
-                    }
-                  }
-                }
-              }
-              logger.info(`Hydrated document ${docId} from TipTap JSON snapshot`);
-            }
-          } catch (jsonErr) {
-            logger.warn(`Failed to parse content JSON fallback for ${docId}:`, jsonErr);
-          }
+          this.hydrateFromJson(docId, ydoc, docRecord.content);
         }
 
         // Attach update listener for debounced persistence
@@ -119,6 +121,57 @@ export class DocumentManager {
 
     this.initLocks.set(docId, loadPromise);
     return loadPromise;
+  }
+
+  /**
+   * Hydrates the shared "default" XML fragment from a TipTap JSON snapshot.
+   * Uses the full editor schema; falls back to a plain paragraph import if the
+   * snapshot contains nodes the schema does not know about.
+   */
+  private hydrateFromJson(docId: string, ydoc: any, content: string): void {
+    let parsed: any;
+    try {
+      parsed = JSON.parse(content);
+    } catch (jsonErr) {
+      logger.warn(`Failed to parse content JSON fallback for ${docId}:`, jsonErr);
+      return;
+    }
+
+    if (!parsed || parsed.type !== "doc" || !Array.isArray(parsed.content)) {
+      return;
+    }
+
+    const xmlFragment = ydoc.getXmlFragment("default");
+
+    try {
+      prosemirrorJSONToYXmlFragment(editorSchema, parsed, xmlFragment);
+      logger.info(`Hydrated document ${docId} from TipTap JSON snapshot (schema-aware)`);
+      return;
+    } catch (schemaErr) {
+      logger.warn(
+        `Schema-aware hydration failed for ${docId}; falling back to plain paragraphs.`,
+        schemaErr
+      );
+    }
+
+    // Plain paragraph fallback (lossy but never throws)
+    ydoc.transact(() => {
+      for (const node of parsed.content) {
+        if (node.type !== "paragraph" && node.type !== "heading") continue;
+        const p = new Y.XmlElement(node.type);
+        if (node.type === "heading" && node.attrs?.level) {
+          p.setAttribute("level", String(node.attrs.level));
+        }
+        xmlFragment.push([p]);
+        if (Array.isArray(node.content)) {
+          for (const textNode of node.content) {
+            if (textNode.type === "text" && typeof textNode.text === "string") {
+              p.push([new Y.XmlText(textNode.text)]);
+            }
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -196,6 +249,74 @@ export class DocumentManager {
   }
 
   /**
+   * Called when the last client leaves a room. Flushes pending changes and, after a
+   * grace period (so quick reconnects don't hit the database), releases the Y.Doc
+   * from memory. Without this, every document ever opened stays resident forever.
+   */
+  async releaseIfIdle(docId: string, ydoc: any): Promise<void> {
+    try {
+      await this.flushDocument(docId, ydoc);
+    } catch (err) {
+      logger.error(`Error flushing document ${docId} on empty room:`, err);
+    }
+    this.scheduleEviction(docId, ydoc);
+  }
+
+  private scheduleEviction(docId: string, ydoc: any): void {
+    this.cancelEviction(docId);
+    const timer = setTimeout(() => {
+      this.evictionTimers.delete(docId);
+      void this.evictDocument(docId, ydoc);
+    }, EVICTION_GRACE_MS);
+    timer.unref?.();
+    this.evictionTimers.set(docId, timer);
+  }
+
+  private cancelEviction(docId: string): void {
+    const timer = this.evictionTimers.get(docId);
+    if (timer) {
+      clearTimeout(timer);
+      this.evictionTimers.delete(docId);
+    }
+  }
+
+  /**
+   * Evicts a document from memory if nobody reconnected during the grace period.
+   */
+  async evictDocument(docId: string, ydoc: any): Promise<boolean> {
+    const current = this.docs.get(docId);
+    if (!current || current !== ydoc) return false;
+    if (ydoc.conns && ydoc.conns.size > 0) return false;
+
+    // Make sure nothing is left unsaved before dropping the in-memory copy.
+    const pendingTimer = this.persistenceTimers.get(docId);
+    if (pendingTimer) {
+      clearTimeout(pendingTimer);
+      this.persistenceTimers.delete(docId);
+    }
+    if (this.dirtyDocs.has(docId)) {
+      const ok = await this.flushDocument(docId, ydoc);
+      if (!ok) {
+        // Could not persist – keep it in memory and retry later.
+        this.scheduleEviction(docId, ydoc);
+        return false;
+      }
+    }
+
+    // Re-check: a client may have connected while we were flushing.
+    if (ydoc.conns && ydoc.conns.size > 0) return false;
+
+    this.docs.delete(docId);
+    try {
+      ydoc.destroy();
+    } catch {
+      // ignore
+    }
+    logger.info(`Evicted idle document ${docId} from memory`);
+    return true;
+  }
+
+  /**
    * Flushes all pending documents to PostgreSQL (used on shutdown or disconnects)
    */
   async flushAll(): Promise<void> {
@@ -220,6 +341,13 @@ export class DocumentManager {
 
     await Promise.all(promises);
     logger.info("All dirty documents flushed to PostgreSQL.");
+  }
+
+  /**
+   * Number of documents currently resident in memory (for health reporting).
+   */
+  getResidentDocumentCount(): number {
+    return this.docs.size;
   }
 
   /**

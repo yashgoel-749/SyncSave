@@ -31,6 +31,10 @@ export function getActiveConnectionCount(): number {
   return count;
 }
 
+export function getActiveRoomCount(): number {
+  return activeConnections.size;
+}
+
 export function getIpConnectionCount(ip: string): number {
   return connectionsByIp.get(ip) ?? 0;
 }
@@ -116,6 +120,16 @@ export function closeAllConnections(code = 1001, reason = "Server shutting down"
 }
 
 /**
+ * Converts an incoming ws message payload into a Uint8Array view (no copy when possible).
+ */
+function toBytes(raw: unknown): Uint8Array | null {
+  if (raw instanceof ArrayBuffer) return new Uint8Array(raw);
+  if (raw instanceof Uint8Array) return raw;
+  if (Buffer.isBuffer(raw)) return new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength);
+  return null;
+}
+
+/**
  * Parses and verifies incoming WebSocket connection for collaborative editing.
  * Enforces rate limiting, connection limits, token authentication,
  * document room authorization, viewer write restrictions, and coordinated loading.
@@ -177,12 +191,18 @@ export async function handleWSConnection(
       return;
     }
 
-    // Buffer early messages arriving before async document hydration completes
+    // Buffer early messages arriving before async document hydration completes,
+    // and remember if the client went away while we were loading.
     const earlyMessages: Array<{ data: any; isBinary: boolean }> = [];
+    let closedWhileLoading = false;
     const earlyMsgHandler = (data: any, isBinary: boolean) => {
       earlyMessages.push({ data, isBinary });
     };
+    const earlyCloseHandler = () => {
+      closedWhileLoading = true;
+    };
     ws.on("message", earlyMsgHandler);
+    ws.once("close", earlyCloseHandler);
 
     // 3. Coordinated first-connection loading (prevents race condition)
     let ydoc: any;
@@ -190,6 +210,15 @@ export async function handleWSConnection(
       ydoc = await documentManager.getOrLoadDocument(docId);
     } finally {
       ws.off("message", earlyMsgHandler);
+      ws.off("close", earlyCloseHandler);
+    }
+
+    if (closedWhileLoading || ws.readyState !== WebSocket.OPEN) {
+      logger.info(`Client for ${docId} disconnected before hydration completed; skipping registration`);
+      if (ydoc && ydoc.conns && ydoc.conns.size === 0) {
+        void documentManager.releaseIfIdle(docId, ydoc);
+      }
+      return;
     }
 
     if (!ydoc) {
@@ -236,27 +265,20 @@ export async function handleWSConnection(
 
         // Drop messages exceeding rate limit
         if (messageCount > config.messageRateLimitPerSec) {
-          logger.warn(`Throttled message from user ${tokenPayload.userId} (${messageCount} msg/sec)`);
+          if (messageCount === config.messageRateLimitPerSec + 1) {
+            logger.warn(`Throttling messages from user ${tokenPayload.userId} (${messageCount} msg/sec)`);
+          }
           // Terminate abusive connection if flooding 2x limit
           if (messageCount > config.messageRateLimitPerSec * 2) {
             logger.warn(`Closing connection for abusive message rate from user ${tokenPayload.userId}`);
             ws.close(4429, "Rate limit exceeded");
-            return false;
           }
           return false;
         }
 
         // Viewer write protection
         if (roleRef.role === "VIEWER") {
-          const raw = args[0];
-          const bytes =
-            raw instanceof ArrayBuffer
-              ? new Uint8Array(raw)
-              : raw instanceof Uint8Array
-              ? raw
-              : Buffer.isBuffer(raw)
-              ? new Uint8Array(raw)
-              : null;
+          const bytes = toBytes(args[0]);
 
           if (bytes && bytes.length > 1) {
             const messageType = bytes[0];
@@ -307,9 +329,7 @@ export async function handleWSConnection(
       }
 
       if (ydoc.conns && ydoc.conns.size === 0) {
-        documentManager.flushDocument(docId, ydoc).catch((err) => {
-          logger.error(`Error flushing document ${docId} on empty room:`, err);
-        });
+        void documentManager.releaseIfIdle(docId, ydoc);
       }
     });
   } catch (error) {
