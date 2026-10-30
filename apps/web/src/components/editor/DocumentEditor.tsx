@@ -206,10 +206,12 @@ export default function DocumentEditor({
 
   // Permissions
   const canEdit =
-    initialDoc.userRole === "OWNER" ||
-    initialDoc.userRole === "EDITOR" ||
-    initialDoc.userRole === "ADMIN" ||
-    initialDoc.userRole === "MEMBER";
+    !isAccessRevoked && (
+      initialDoc.userRole === "OWNER" ||
+      initialDoc.userRole === "EDITOR" ||
+      initialDoc.userRole === "ADMIN" ||
+      initialDoc.userRole === "MEMBER"
+    );
 
   // Connect to Collaboration Server (Yjs + WebSockets + IndexedDB)
   useEffect(() => {
@@ -1269,7 +1271,12 @@ export default function DocumentEditor({
         <div className={view === "document" ? "flex-1 flex flex-col" : "hidden"}>
           <div className="flex-1 card border border-border-subtle bg-surface-1 flex flex-col rounded-xl overflow-hidden shadow-xl relative">
             {/* Editor Format Toolbar */}
-            <EditorToolbar editor={editor} readOnly={!canEdit} />
+            <EditorToolbar
+              editor={editor}
+              readOnly={!canEdit}
+              documentId={initialDoc.id}
+              dictationEnabled={editorEditable && view === "document" && !manualOffline}
+            />
 
             {/* Clickable Canvas Wrapping ProseMirror */}
             <div
