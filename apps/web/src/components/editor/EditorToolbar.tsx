@@ -63,7 +63,7 @@ export default function EditorToolbar({
 
   if (!editor || readOnly) {
     return (
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border-subtle bg-surface-1/50 rounded-t-xl text-xs text-text-muted select-none">
+      <div className="flex items-center justify-between px-4 py-2 bg-surface-2 rounded-xl text-xs text-text-muted select-none">
         <div className="flex items-center gap-2">
           <svg className="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H10m4-11a4 4 0 00-8 0v4h8V6z" />
@@ -105,7 +105,7 @@ export default function EditorToolbar({
   const isLinkActive = editor.isActive("link");
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-border-subtle bg-surface-1 rounded-t-xl text-xs">
+    <div role="toolbar" aria-label="Document formatting" className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 bg-surface-2 rounded-xl text-xs">
       {/* History */}
       <ToolbarButton
         onClick={() => editor.chain().focus().undo().run()}

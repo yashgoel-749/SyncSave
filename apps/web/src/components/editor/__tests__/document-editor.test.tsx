@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import EditorToolbar from "../EditorToolbar";
 import DocumentEditor from "../DocumentEditor";
 
@@ -132,6 +132,27 @@ describe("DocumentEditor & EditorToolbar Components", () => {
   });
 
   describe("DocumentEditor Permissions & Lifecycle", () => {
+    it("keeps one formatting toolbar with the title and actions outside the document canvas", () => {
+      render(<DocumentEditor document={baseDoc} userId="usr_alice" />);
+
+      const header = screen.getByRole("banner");
+      const toolbar = within(header).getByRole("toolbar", { name: "Document formatting" });
+      expect(within(header).getByRole("textbox", { name: "Document title" })).toBeInTheDocument();
+      expect(within(toolbar).getByRole("button", { name: "Bold (Ctrl+B)" })).toBeInTheDocument();
+      expect(within(toolbar).getByRole("button", { name: "Italic (Ctrl+I)" })).toBeInTheDocument();
+      expect(screen.getAllByRole("toolbar", { name: "Document formatting" })).toHaveLength(1);
+      expect(screen.getByRole("main")).not.toContainElement(toolbar);
+    });
+
+    it("can open and close the link dialog from the persistent formatting toolbar", () => {
+      render(<DocumentEditor document={baseDoc} userId="usr_alice" />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Add Link" }));
+      expect(screen.getByRole("dialog", { name: "Insert link" })).toBeInTheDocument();
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
     it("should render editable title and allow editing for OWNER", () => {
       render(<DocumentEditor document={baseDoc} userId="usr_alice" />);
 

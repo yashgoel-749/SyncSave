@@ -831,8 +831,8 @@ export default function DocumentEditor({
   return (
     <div className="min-h-dvh flex flex-col bg-surface-0 text-text-primary">
       {/* Top Header / Breadcrumbs & Status Bar */}
-      <header className="border-b border-border-subtle bg-surface-1/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 min-h-14 py-2 sm:py-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-4 gap-y-2">
+      <header className="border-b border-border-subtle bg-surface-1 sticky top-0 z-30 shadow-lg shadow-black/10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 min-h-14 py-2 lg:py-0 flex flex-wrap lg:flex-nowrap items-center justify-between gap-x-4 gap-y-2">
           {/* Breadcrumbs & Title Input */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1 order-1">
             <Link
@@ -1147,6 +1147,16 @@ export default function DocumentEditor({
             )}
           </div>
         </div>
+        <div className={view === "document" ? "border-t border-border-subtle px-4 sm:px-6 py-2" : "hidden"}>
+          <div className="mx-auto max-w-7xl">
+            <EditorToolbar
+              editor={editor}
+              readOnly={!canEdit}
+              documentId={initialDoc.id}
+              dictationEnabled={editorEditable && view === "document" && !manualOffline}
+            />
+          </div>
+        </div>
       </header>
 
       {/* Error Notification Banner */}
@@ -1270,14 +1280,6 @@ export default function DocumentEditor({
         {/* Rich-text editor pane (kept mounted while the whiteboard is shown so editor state survives) */}
         <div className={view === "document" ? "flex-1 flex flex-col" : "hidden"}>
           <div className="flex-1 card border border-border-subtle bg-surface-1 flex flex-col rounded-xl overflow-hidden shadow-xl relative">
-            {/* Editor Format Toolbar */}
-            <EditorToolbar
-              editor={editor}
-              readOnly={!canEdit}
-              documentId={initialDoc.id}
-              dictationEnabled={editorEditable && view === "document" && !manualOffline}
-            />
-
             {/* Clickable Canvas Wrapping ProseMirror */}
             <div
               className="flex-1 p-6 sm:p-10 tiptap-editor-canvas"
@@ -1292,7 +1294,7 @@ export default function DocumentEditor({
 
             {/* Loading shimmer until the shared document is bound */}
             {!collab && (
-              <div className="absolute inset-x-0 bottom-0 top-[45px] bg-surface-1/70 backdrop-blur-[1px] flex items-start justify-center p-10 pointer-events-none">
+              <div className="absolute inset-0 bg-surface-1/70 backdrop-blur-[1px] flex items-start justify-center p-10 pointer-events-none">
                 <div className="w-full max-w-2xl space-y-3">
                   <div className="skeleton h-6 w-2/3" />
                   <div className="skeleton h-4 w-full" />
