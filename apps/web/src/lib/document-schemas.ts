@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseImportedDocument, plainTextDocument } from "./document-files";
 
 export const createWorkspaceSchema = z.object({
   name: z
@@ -38,7 +39,14 @@ export const createDocumentSchema = z.object({
     .max(100, "Title must be 100 characters or less")
     .optional(),
   workspaceId: z.string().trim().optional(),
-  content: z.string().optional(),
+  content: z.string().superRefine((content, ctx) => {
+    try {
+      if (content.trimStart().startsWith("{")) parseImportedDocument(content);
+      else plainTextDocument(content);
+    } catch (error) {
+      ctx.addIssue({ code: "custom", message: error instanceof Error ? error.message : "Invalid document content" });
+    }
+  }).optional(),
 });
 
 export const updateDocumentSchema = z.object({
@@ -52,6 +60,7 @@ export const updateDocumentSchema = z.object({
   isArchived: z.boolean().optional(),
   isPublic: z.boolean().optional(),
   clientUpdatedAt: z.string().optional(),
+  expectedTitle: z.string().max(100).optional(),
 });
 
 export const documentQuerySchema = z.object({
@@ -90,4 +99,3 @@ export type InviteCollaboratorInput = z.infer<typeof inviteCollaboratorSchema>;
 export type CreateDocumentInput = z.infer<typeof createDocumentSchema>;
 export type UpdateDocumentInput = z.infer<typeof updateDocumentSchema>;
 export type DocumentQueryParams = z.infer<typeof documentQuerySchema>;
-

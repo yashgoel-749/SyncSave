@@ -1,21 +1,24 @@
 import { LogoLink } from "@/components/Logo";
+import { CONTACT_EMAIL, SUPPORT_EMAIL_HREF } from "@/lib/site";
 import Link from "next/link";
 
-const FOOTER_LINKS: Record<string, Array<{ label: string; href: string; external?: boolean }>> = {
+const FOOTER_LINKS: Record<string, Array<{ label: string; href: string }>> = {
   Product: [
     { label: "Features", href: "/#features" },
     { label: "Whiteboard", href: "/#whiteboard" },
     { label: "How it works", href: "/#how-it-works" },
+    { label: "Local editor demo", href: "/demo" },
   ],
   Account: [
     { label: "Sign in", href: "/login" },
     { label: "Create account", href: "/register" },
     { label: "Dashboard", href: "/dashboard" },
   ],
-  "Built with": [
-    { label: "Next.js", href: "https://nextjs.org", external: true },
-    { label: "Yjs CRDT", href: "https://yjs.dev", external: true },
-    { label: "TipTap", href: "https://tiptap.dev", external: true },
+  "Help & information": [
+    { label: "Help", href: "/help" },
+    { label: "Contact", href: "/contact" },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
   ],
 };
 
@@ -34,12 +37,15 @@ export function Footer() {
             <LogoLink size="sm" className="mb-4" />
             <p className="text-text-muted text-sm leading-relaxed max-w-xs">
               Real-time collaborative documents and whiteboards with an offline-first architecture.
-              Your work, always in sync.
+              Public beta. Keep a separate copy of important work; sync is not a cloud backup guarantee.
             </p>
+            <a href={SUPPORT_EMAIL_HREF} className="inline-block mt-4 text-sm text-text-secondary hover:text-text-primary break-all">
+              {CONTACT_EMAIL}
+            </a>
             <div className="flex gap-3 mt-6">
               <a
-                href="https://github.com"
-                aria-label="GitHub"
+                href="https://github.com/yashgoel-749/SyncSave"
+                aria-label="SyncSave source on GitHub"
                 className="btn btn-ghost p-2 text-text-muted hover:text-text-primary"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -56,25 +62,14 @@ export function Footer() {
                 {section}
               </h3>
               <ul className="flex flex-col gap-2.5">
-                {links.map(({ label, href, external }) => (
+                {links.map(({ label, href }) => (
                   <li key={label}>
-                    {external ? (
-                      <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-                      >
-                        {label}
-                      </a>
-                    ) : (
-                      <Link
-                        href={href}
-                        className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-                      >
-                        {label}
-                      </Link>
-                    )}
+                    <Link
+                      href={href}
+                      className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      {label}
+                    </Link>
                   </li>
                 ))}
               </ul>

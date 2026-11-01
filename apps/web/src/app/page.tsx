@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import type { Metadata } from "next";
+import { CONTACT_EMAIL, SUPPORT_EMAIL_HREF } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "SyncSpace — Collaborative Documents & Whiteboards, Offline-First",
@@ -41,7 +42,7 @@ const FEATURES = [
     icon: <MergeIcon />,
     title: "Conflict-Free Merging",
     description:
-      "Built on Yjs CRDTs. No merge conflicts, no data loss. Multiple editors can work simultaneously without stepping on each other.",
+      "Built on Yjs CRDTs. Concurrent edits merge automatically, so teammates can write together without manually resolving text conflicts.",
     gradient: "from-brand-400 to-accent-500",
     glow: "hover:shadow-[0_0_30px_hsl(246_76%_65%/0.25)]",
   },
@@ -70,7 +71,7 @@ const HOW_IT_WORKS = [
     step: "01",
     title: "Create a document",
     description:
-      "Hit New Document, give it a title, and you're in the editor in under two seconds.",
+      "Start from a blank document or a template, then give your work a title.",
   },
   {
     step: "02",
@@ -114,15 +115,15 @@ export default function LandingPage() {
             className="pointer-events-none absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full bg-accent-500/8 blur-[100px]"
           />
 
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-28 sm:py-36 text-center">
-            <div className="animate-fade-up inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-sm text-text-secondary mb-8 border border-brand-700/40">
+          <div className="relative w-full min-w-0 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-36 text-center">
+            <div className="animate-fade-up inline-flex max-w-full items-center gap-2 glass rounded-full px-4 py-1.5 text-xs sm:text-sm text-text-secondary mb-8 border border-brand-700/40">
               <span className="inline-block w-2 h-2 rounded-full bg-accent-500 animate-pulse-ring" />
               New: a shared whiteboard in every document
             </div>
 
             <h1
               id="hero-heading"
-              className="animate-fade-up-delay-1 text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-none mb-6"
+              className="animate-fade-up-delay-1 text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-none mb-6"
             >
               Documents that{" "}
               <span className="gradient-text block sm:inline">
@@ -132,8 +133,8 @@ export default function LandingPage() {
 
             <p className="animate-fade-up-delay-2 text-lg sm:text-xl text-text-secondary max-w-2xl mx-auto mb-12 leading-relaxed">
               SyncSpace is the offline-first collaborative editor built for
-              modern teams. Write, sketch and sync in real time — conflict-free, and fast
-              even without Wi-Fi.
+               small teams, founders, and students. Keep meeting notes, plan projects,
+               and sketch ideas together, with local editing when the connection drops.
             </p>
 
             <div className="animate-fade-up-delay-3 flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -145,13 +146,13 @@ export default function LandingPage() {
                 Start writing for free
                 <ArrowRightIcon className="w-5 h-5" />
               </Link>
-              <a
-                href="#how-it-works"
+              <Link
+                href="/demo"
                 id="hero-cta-secondary"
                 className="btn btn-secondary text-base px-8 py-4"
               >
-                See how it works
-              </a>
+                Try the editor demo
+              </Link>
             </div>
 
             <p className="animate-fade-up-delay-4 mt-10 text-sm text-text-muted">
@@ -160,6 +161,7 @@ export default function LandingPage() {
 
             {/* Editor preview card */}
             <div className="animate-fade-up-delay-4 mt-20 relative mx-auto max-w-4xl">
+              <p className="text-xs text-text-muted mb-3">Illustration of a shared document · Try the demo to edit a local sample</p>
               <div className="gradient-border rounded-2xl p-px">
                 <div className="rounded-2xl overflow-hidden bg-surface-2 shadow-2xl">
                   <EditorMockup />
@@ -174,7 +176,7 @@ export default function LandingPage() {
                   <AvatarDot color="#34d399" />
                   <AvatarDot color="#f59e0b" />
                 </span>
-                3 people editing
+                 Example collaborators
               </div>
             </div>
           </div>
@@ -188,7 +190,7 @@ export default function LandingPage() {
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-              <p className="text-sm font-semibold text-brand-400 uppercase tracking-widest mb-3">
+              <p className="text-sm font-semibold text-action uppercase tracking-widest mb-3">
                 Features
               </p>
               <h2
@@ -237,7 +239,7 @@ export default function LandingPage() {
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-surface-0 via-transparent to-surface-0" />
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <p className="text-sm font-semibold text-accent-500 uppercase tracking-widest mb-3">
+              <p className="text-sm font-semibold text-success uppercase tracking-widest mb-3">
                 Whiteboard
               </p>
               <h2 id="whiteboard-heading" className="text-4xl sm:text-5xl font-bold tracking-tight mb-5">
@@ -251,7 +253,7 @@ export default function LandingPage() {
               <ul className="space-y-5">
                 {WHITEBOARD_POINTS.map((p) => (
                   <li key={p.title} className="flex gap-4">
-                    <span className="mt-1 w-6 h-6 rounded-full bg-accent-500/15 text-accent-400 flex items-center justify-center flex-shrink-0">
+                    <span className="mt-1 w-6 h-6 rounded-full bg-accent-500/15 text-success flex items-center justify-center flex-shrink-0">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
@@ -286,7 +288,7 @@ export default function LandingPage() {
           />
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-              <p className="text-sm font-semibold text-accent-500 uppercase tracking-widest mb-3">
+              <p className="text-sm font-semibold text-success uppercase tracking-widest mb-3">
                 How it works
               </p>
               <h2
@@ -342,8 +344,8 @@ export default function LandingPage() {
                   <span className="gradient-text">sync up?</span>
                 </h2>
                 <p className="text-text-secondary text-lg mb-10">
-                  Join teams already collaborating with SyncSpace. Free to
-                  start, no credit card required.
+                   Create a workspace for your team. Free during beta,
+                   with no credit card required.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link
@@ -357,6 +359,15 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+        <section id="contact" aria-labelledby="contact-heading" className="py-16 px-4 sm:px-6 border-t border-border-subtle">
+          <div className="mx-auto max-w-4xl flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between">
+            <div>
+              <h2 id="contact-heading" className="text-2xl font-semibold mb-2">Help shape SyncSpace</h2>
+              <p className="text-sm text-text-secondary">Questions, feedback, or a bug? Contact Yash at the email below.</p>
+            </div>
+            <a href={SUPPORT_EMAIL_HREF} className="btn btn-secondary break-all text-sm">{CONTACT_EMAIL}</a>
           </div>
         </section>
       </main>
@@ -466,7 +477,7 @@ function EditorMockup() {
             key={i}
             className={`px-2 py-1 rounded ${
               t === "|" ? "opacity-20" : ""
-            } ${t === "B" ? "font-bold text-brand-400 bg-surface-3" : ""}`}
+            } ${t === "B" ? "font-bold text-action bg-surface-3" : ""}`}
             aria-hidden="true"
           >
             {t}
@@ -487,7 +498,7 @@ function EditorMockup() {
             <div className="h-5 w-1 rounded-full bg-brand-500 mt-0.5 flex-shrink-0" />
             <p className="text-text-secondary text-sm leading-relaxed">
               Our primary goal this quarter is to expand into the{" "}
-              <span className="text-brand-400 font-medium">enterprise segment</span>{" "}
+              <span className="text-action font-medium">enterprise segment</span>{" "}
               while maintaining our velocity on the core product.
             </p>
           </div>
@@ -505,8 +516,8 @@ function EditorMockup() {
           </div>
           <div className="text-sm text-text-secondary">
             Key initiatives:{" "}
-            <span className="text-accent-500 font-medium">Auth revamp</span>,{" "}
-            <span className="text-brand-400 font-medium">Offline sync</span>,{" "}
+            <span className="text-success font-medium">Auth revamp</span>,{" "}
+            <span className="text-action font-medium">Offline sync</span>,{" "}
             <span className="text-text-muted">API rate limits</span>
             <span
               className="inline-block w-0.5 h-4 bg-accent-500 animate-pulse rounded-full ml-1 align-middle"

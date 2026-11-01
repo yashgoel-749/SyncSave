@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { ThemeSync } from "@/components/ThemeToggle";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -52,7 +55,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#6d5ae6",
-  colorScheme: "dark",
+  colorScheme: "dark light",
   width: "device-width",
   initialScale: 1,
 };
@@ -69,9 +72,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="dark"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
       className={`${inter.variable} ${jetbrainsMono.variable} h-full`}
     >
       <body className="min-h-dvh flex flex-col antialiased">
+        <Script id="syncspace-theme" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <ThemeSync />
         <SessionProvider>
           {children}
           <ServiceWorkerRegister />

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { relativeTime } from "@/lib/utils";
 import { ConfirmDialog, Modal } from "@/components/ui/Modal";
+import { DOCUMENT_STARTERS } from "@/lib/document-starters";
+import { readDocumentFile, type TipTapDocument } from "@/lib/document-files";
 
 interface Workspace {
   id: string;
@@ -66,6 +68,7 @@ export default function DashboardView({
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [newWorkspaceDesc, setNewWorkspaceDesc] = useState("");
   const [isSubmittingWorkspace, setIsSubmittingWorkspace] = useState(false);
+  const [navigationOpen, setNavigationOpen] = useState(false);
 
   // Documents state
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
@@ -81,6 +84,11 @@ export default function DashboardView({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const creationPendingRef = useRef(false);
+  const importPendingRef = useRef(false);
+  const [creationDialog, setCreationDialog] = useState<"templates" | "import" | null>(null);
+  const [creationError, setCreationError] = useState<string | null>(null);
+  const [isReadingFile, setIsReadingFile] = useState(false);
 
   // Modals
   const [renamingDoc, setRenamingDoc] = useState<DocumentItem | null>(null);
@@ -182,13 +190,16 @@ export default function DashboardView({
   };
 
   // Create document with optimistic update
-  const handleCreateDocument = async () => {
-    if (isCreating) return;
+  const handleCreateDocument = async (starter?: { title: string; content: TipTapDocument }) => {
+    if (creationPendingRef.current) return;
+    creationPendingRef.current = true;
     setIsCreating(true);
+    setCreationError(null);
+    setErrorMessage(null);
     const tempId = `temp-${Date.now()}`;
     const optimisticDoc: DocumentItem = {
       id: tempId,
-      title: "Untitled Document",
+      title: starter?.title ?? "Untitled Document",
       preview: "",
       workspaceId: selectedWorkspaceId || null,
       workspace: workspaces.find((w) => w.id === selectedWorkspaceId) || null,
@@ -206,8 +217,9 @@ export default function DashboardView({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: "Untitled Document",
+          title: starter?.title ?? "Untitled Document",
           workspaceId: selectedWorkspaceId || undefined,
+          ...(starter ? { content: JSON.stringify(starter.content) } : {}),
         }),
       });
 
@@ -218,13 +230,38 @@ export default function DashboardView({
 
       const { document: newDoc } = await res.json();
       setDocuments((prev) => prev.map((d) => (d.id === tempId ? newDoc : d)));
+      setCreationDialog(null);
       router.push(`/documents/${newDoc.id}`);
     } catch (err: unknown) {
       setDocuments((prev) => prev.filter((d) => d.id !== tempId));
       const msg = err instanceof Error ? err.message : "Failed to create document";
       setErrorMessage(msg);
+      setCreationError(msg);
+      creationPendingRef.current = false;
       setIsCreating(false);
     }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.currentTarget.files?.[0];
+    e.currentTarget.value = "";
+    if (!file || importPendingRef.current || creationPendingRef.current) return;
+    importPendingRef.current = true;
+    setIsReadingFile(true);
+    setCreationError(null);
+    try {
+      const imported = await readDocumentFile(file);
+      await handleCreateDocument(imported);
+    } catch (err: unknown) {
+      setCreationError(err instanceof Error ? err.message : "Could not import this file. Try again.");
+    } finally {
+      importPendingRef.current = false;
+      setIsReadingFile(false);
+    }
+  };
+
+  const closeCreationDialog = () => {
+    if (!isCreating && !isReadingFile) setCreationDialog(null);
   };
 
   // Create Workspace
@@ -368,45 +405,75 @@ export default function DashboardView({
   const activeWorkspace = workspaces.find((w) => w.id === selectedWorkspaceId);
 
   return (
-    <div className="space-y-6">
-      {/* Top Controls: Workspace Selector + Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <label htmlFor="workspace-select" className="sr-only">
+    <div className="grid min-w-0 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
+      <aside className="min-w-0 self-start rounded-xl border border-border-subtle bg-surface-1 lg:sticky lg:top-24">
+        <button
+          type="button"
+          className="flex w-full min-w-0 items-center justify-between gap-3 p-4 text-left text-sm font-medium lg:hidden"
+          aria-expanded={navigationOpen}
+          aria-controls="dashboard-navigation"
+          onClick={() => setNavigationOpen((open) => !open)}
+        >
+          <span className="min-w-0 truncate">{activeWorkspace?.name || "Workspace"} · {FILTERS.find((f) => f.id === filter)?.label}</span>
+          <svg aria-hidden="true" className={`h-4 w-4 shrink-0 transition-transform ${navigationOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <div id="dashboard-navigation" className={`${navigationOpen ? "block" : "hidden"} space-y-6 p-4 lg:block lg:p-5`}>
+          <div className="min-w-0 space-y-3">
+            <label htmlFor="workspace-select" className="block text-xs font-semibold tracking-wide text-text-secondary">
               Workspace
             </label>
             <select
               id="workspace-select"
               value={selectedWorkspaceId}
               onChange={(e) => setSelectedWorkspaceId(e.target.value)}
-              className="select w-auto min-w-[200px] font-medium"
+              className="select w-full min-w-0 text-sm font-medium"
             >
               {workspaces.map((ws) => (
                 <option key={ws.id} value={ws.id}>
                   {ws.name}
-                  {ws._count ? ` (${ws._count.documents})` : ""}
                 </option>
               ))}
             </select>
+            {activeWorkspace?.description && <p className="break-words text-sm leading-relaxed text-text-secondary">{activeWorkspace.description}</p>}
+            <button
+              onClick={() => setIsCreatingWorkspace(true)}
+              className="btn btn-ghost w-full justify-start gap-2 px-2.5 py-2 text-sm text-text-secondary hover:text-text-primary"
+              title="Create new workspace"
+            >
+              <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>New workspace</span>
+            </button>
           </div>
-
-          <button
-            onClick={() => setIsCreatingWorkspace(true)}
-            className="btn btn-ghost text-xs px-2.5 py-2 text-text-secondary hover:text-text-primary border border-dashed border-border-normal hover:border-brand-500/60 rounded-lg flex items-center gap-1.5"
-            title="Create new workspace"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>New workspace</span>
-          </button>
+          <nav aria-label="Document navigation" className="space-y-1 border-t border-border-subtle pt-4">
+            {FILTERS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                aria-pressed={filter === f.id}
+                onClick={() => setFilter(f.id)}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm transition-colors ${filter === f.id ? "bg-brand-500/10 font-semibold text-action" : "text-text-secondary hover:bg-surface-2 hover:text-text-primary"}`}
+              >
+                <FilterIcon filter={f.id} />
+                {f.label}
+              </button>
+            ))}
+          </nav>
         </div>
-
-        <div className="flex items-center gap-3">
+      </aside>
+      <section aria-labelledby="dashboard-documents-title" className="min-w-0 space-y-6">
+      <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+        <div className="min-w-0">
+          <p className="mb-1 truncate text-sm text-text-secondary">{activeWorkspace?.name || "Your workspace"}</p>
+          <h2 id="dashboard-documents-title" className="text-2xl font-semibold tracking-tight text-text-primary">{FILTERS.find((f) => f.id === filter)?.label}</h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={handleCreateDocument}
-            disabled={isCreating}
+            onClick={() => handleCreateDocument()}
+            disabled={isCreating || isReadingFile}
             id="new-document-button"
             className="btn btn-primary text-sm px-4 py-2 flex items-center gap-2"
           >
@@ -419,6 +486,14 @@ export default function DashboardView({
             )}
             <span>New document</span>
           </button>
+          <button className="btn btn-secondary text-sm px-4 py-2" disabled={isCreating || isReadingFile}
+            onClick={() => { setCreationError(null); setCreationDialog("templates"); }}>
+            Templates
+          </button>
+          <button className="btn btn-secondary text-sm px-4 py-2" disabled={isCreating || isReadingFile}
+            onClick={() => { setCreationError(null); setCreationDialog("import"); }}>
+            Import
+          </button>
         </div>
       </div>
 
@@ -426,17 +501,17 @@ export default function DashboardView({
       {errorMessage && (
         <div
           role="alert"
-          className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2"
+          className="p-4 rounded-lg bg-status-danger-bg border border-status-danger-border text-status-danger text-sm flex items-center justify-between gap-3"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <span>{errorMessage}</span>
+            <span className="break-words">{errorMessage}</span>
           </div>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-red-400 hover:text-red-300 font-bold px-1"
+            className="shrink-0 text-status-danger font-bold p-2"
             aria-label="Dismiss"
           >
             ✕
@@ -444,24 +519,8 @@ export default function DashboardView({
         </div>
       )}
 
-      {/* Search and Filter Tabs */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-border-subtle pb-4">
-        <div className="segmented self-start" role="tablist" aria-label="Document filter">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              role="tab"
-              aria-selected={filter === f.id}
-              data-active={filter === f.id}
-              onClick={() => setFilter(f.id)}
-              className={f.id === "trash" && filter === "trash" ? "!text-red-300" : undefined}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative max-w-xs w-full">
+      <div className="border-b border-border-subtle pb-5">
+        <div className="relative w-full max-w-xl">
           <label htmlFor="document-search" className="sr-only">
             Search documents
           </label>
@@ -472,7 +531,7 @@ export default function DashboardView({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search documents…"
-            className="input text-xs py-2 pl-9 pr-10"
+            className="input text-sm py-3 pl-10 pr-10"
             autoComplete="off"
           />
           <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
@@ -496,7 +555,7 @@ export default function DashboardView({
 
       {/* Result summary */}
       {!isLoading && documents.length > 0 && (
-        <p className="text-[11px] text-text-muted -mt-2">
+        <p role="status" className="break-words text-sm text-text-secondary">
           Showing {documents.length} of {total} {total === 1 ? "document" : "documents"}
           {activeWorkspace ? ` in ${activeWorkspace.name}` : ""}
           {debouncedSearch ? ` matching “${debouncedSearch}”` : ""}
@@ -505,7 +564,7 @@ export default function DashboardView({
 
       {/* Documents Grid / Content View */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-busy="true">
+        <div className="grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" aria-busy="true" aria-label="Loading documents">
           {[1, 2, 3, 4, 5, 6].map((n) => (
             <div key={n} className="card p-5 space-y-3">
               <div className="skeleton h-5 w-2/3" />
@@ -519,7 +578,7 @@ export default function DashboardView({
           ))}
         </div>
       ) : documents.length === 0 ? (
-        <div className="card p-12 text-center border-dashed bg-surface-1/40 animate-in fade-in zoom-in-95">
+        <div className="card px-5 py-10 sm:p-12 text-center border-dashed bg-surface-1">
           <div className="mx-auto w-14 h-14 rounded-2xl bg-surface-2 border border-border-subtle flex items-center justify-center text-text-muted mb-4">
             {filter === "trash" ? (
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,7 +605,7 @@ export default function DashboardView({
               ? "Nothing edited in the last 7 days"
               : "No documents yet"}
           </h3>
-          <p className="mt-1 text-xs text-text-secondary max-w-sm mx-auto">
+          <p className="mt-2 text-sm leading-relaxed text-text-secondary max-w-sm mx-auto break-words">
             {debouncedSearch
               ? "Try adjusting your search terms or filters."
               : filter === "trash"
@@ -559,8 +618,8 @@ export default function DashboardView({
           </p>
           {filter === "all" && !debouncedSearch && (
             <button
-              onClick={handleCreateDocument}
-              disabled={isCreating}
+              onClick={() => handleCreateDocument()}
+              disabled={isCreating || isReadingFile}
               className="mt-5 btn btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -569,41 +628,47 @@ export default function DashboardView({
               <span>Create document</span>
             </button>
           )}
+          {filter === "all" && !debouncedSearch && !errorMessage && (
+            <div className="mt-6 text-left max-w-md mx-auto border-t border-border-subtle pt-5">
+              <h4 className="font-semibold text-sm text-text-primary">Getting started</h4>
+              <ol className="mt-3 space-y-3 text-sm leading-relaxed text-text-secondary list-decimal pl-5">
+                <li>Choose New document for a blank page, Templates for a starting outline, or Import for an existing text file.</li>
+                <li>Write in the editor. Your changes save automatically.</li>
+                <li>Use Share in your document to invite collaborators.</li>
+              </ol>
+              <Link href="/help" className="inline-block mt-3 text-sm text-action hover:underline">Read the getting-started guide</Link>
+            </div>
+          )}
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger">
+          <div className="grid min-w-0 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {documents.map((doc) => {
               const isOwner = doc.ownerId === userId;
               const sharedCount = doc._count?.collaborators ?? 0;
               return (
                 <article
                   key={doc.id}
-                  className="card card-hover p-5 group relative flex flex-col justify-between overflow-hidden"
+                  className="card card-hover min-w-0 p-5 group flex flex-col justify-between"
                 >
-                  {/* Accent bar */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-brand-500 via-brand-400 to-accent-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-col items-start justify-between gap-3">
                       <Link
                         href={`/documents/${doc.id}`}
-                        className="font-semibold text-sm text-text-primary group-hover:text-brand-300 transition-colors line-clamp-1 flex-1"
+                        className="min-w-0 break-words font-semibold text-base leading-snug text-text-primary hover:text-action transition-colors line-clamp-2"
                       >
                         {doc.title || "Untitled Document"}
                       </Link>
 
-                      <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                      <div className="flex flex-wrap items-center gap-1">
                         {filter === "trash" ? (
                           <>
-                            <CardAction label="Restore document" onClick={() => handleRestore(doc)} hover="hover:text-accent-400">
+                            <CardAction label="Restore document" onClick={() => handleRestore(doc)} hover="hover:text-status-success">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                               </svg>
                             </CardAction>
-                            <CardAction label="Permanently delete" onClick={() => setDeletingDoc(doc)} hover="hover:text-red-400">
+                            <CardAction label="Permanently delete" onClick={() => setDeletingDoc(doc)} hover="hover:text-status-danger">
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
@@ -631,7 +696,7 @@ export default function DashboardView({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                               </svg>
                             </CardAction>
-                            <CardAction label="Move to trash" onClick={() => handleSoftDelete(doc)} hover="hover:text-red-400">
+                            <CardAction label="Move to trash" onClick={() => handleSoftDelete(doc)} hover="hover:text-status-danger">
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
@@ -641,17 +706,16 @@ export default function DashboardView({
                       </div>
                     </div>
 
-                    <p className="mt-2 text-xs text-text-secondary line-clamp-2 min-h-[2rem]">
+                    <p className="mt-3 break-words text-sm leading-relaxed text-text-secondary line-clamp-3 min-h-[4rem]">
                       {doc.preview ? doc.preview : <span className="italic text-text-muted">Blank document, ready for writing.</span>}
                     </p>
                   </div>
 
-                  <div className="pt-4 mt-3 border-t border-border-subtle/60 flex items-center justify-between gap-2 text-[11px] text-text-muted">
+                  <div className="pt-4 mt-4 border-t border-border-subtle flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
                     <span className="flex items-center gap-1.5 min-w-0" suppressHydrationWarning>
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent-500 flex-shrink-0" />
                       <span suppressHydrationWarning className="truncate">Edited {relativeTime(doc.updatedAt)}</span>
                     </span>
-                    <span className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className="flex min-w-0 flex-wrap items-center gap-1.5">
                       {!isOwner && <span className="badge badge-muted">Shared with you</span>}
                       {isOwner && sharedCount > 0 && (
                         <span className="badge badge-brand" title={`${sharedCount} collaborator${sharedCount === 1 ? "" : "s"}`}>
@@ -681,6 +745,40 @@ export default function DashboardView({
           )}
         </>
       )}
+
+      </section>
+
+      <Modal open={creationDialog === "templates"} onClose={closeCreationDialog} labelledBy="templates-dialog-title">
+        <div className="p-6 space-y-4">
+          <h3 id="templates-dialog-title" className="text-base font-semibold text-text-primary">Start from a template</h3>
+          <p className="text-xs text-text-secondary">Each template creates a new document in {activeWorkspace?.name || "your workspace"}.</p>
+          {creationError && <p role="alert" className="text-sm text-status-danger">{creationError}</p>}
+          <div className="space-y-3">
+            {DOCUMENT_STARTERS.map((starter) => (
+              <button key={starter.id} disabled={isCreating} onClick={() => handleCreateDocument(starter)}
+                className="card card-hover w-full p-4 text-left disabled:opacity-50">
+                <span className="block font-semibold text-sm">{starter.title}</span>
+                <span className="block mt-1 text-xs text-text-secondary">{starter.description}</span>
+              </button>
+            ))}
+          </div>
+          {isCreating && <p role="status" className="text-xs text-text-secondary">Creating document…</p>}
+          <button type="button" disabled={isCreating} onClick={closeCreationDialog} className="btn btn-ghost text-xs">Cancel</button>
+        </div>
+      </Modal>
+
+      <Modal open={creationDialog === "import"} onClose={closeCreationDialog} labelledBy="import-dialog-title">
+        <div className="p-6 space-y-4">
+          <h3 id="import-dialog-title" className="text-base font-semibold text-text-primary">Import a document</h3>
+          <p className="text-xs text-text-secondary">Choose a UTF-8 .txt file or supported TipTap .json export, up to 256 KiB. Import creates a new document in {activeWorkspace?.name || "your workspace"}; it never replaces an existing document.</p>
+          <label htmlFor="document-import-file" className="block text-sm font-medium">Document file</label>
+          <input id="document-import-file" type="file" accept=".txt,.json" disabled={isCreating || isReadingFile}
+            onChange={handleImportFile} className="input text-xs" />
+          {creationError && <p role="alert" className="text-sm text-status-danger">{creationError}</p>}
+          {(isCreating || isReadingFile) && <p role="status" className="text-xs text-text-secondary">Importing document…</p>}
+          <button type="button" disabled={isCreating || isReadingFile} onClick={closeCreationDialog} className="btn btn-ghost text-xs">Cancel</button>
+        </div>
+      </Modal>
 
       {/* Rename Modal */}
       <Modal open={renamingDoc !== null} onClose={() => setRenamingDoc(null)} labelledBy="rename-dialog-title" size="sm">
@@ -792,6 +890,20 @@ export default function DashboardView({
   );
 }
 
+function FilterIcon({ filter }: { filter: Filter }) {
+  const paths: Record<Filter, string> = {
+    all: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+    recent: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+    archived: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4",
+    trash: "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16",
+  };
+  return (
+    <svg aria-hidden="true" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={paths[filter]} />
+    </svg>
+  );
+}
+
 function CardAction({
   label,
   onClick,
@@ -811,8 +923,8 @@ function CardAction({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`p-1.5 rounded-md transition-colors hover:bg-surface-3 ${
-        active ? "text-accent-violet" : "text-text-muted"
+      className={`p-2.5 rounded-md transition-colors hover:bg-surface-3 ${
+        active ? "text-action" : "text-text-secondary"
       } ${hover}`}
     >
       {children}

@@ -1,5 +1,5 @@
 // SyncSpace Service Worker - Safe Caching Strategy for PWA and Offline Support
-const CACHE_NAME = 'syncspace-static-v2';
+const CACHE_NAME = 'syncspace-static-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Critical static assets to cache on installation
@@ -65,6 +65,25 @@ self.addEventListener('fetch', (event) => {
     url.pathname.includes('/collab-token') ||
     url.pathname.includes('/next-auth')
   ) {
+    return;
+  }
+
+  // Local Next development assets keep the same URLs across code changes.
+  // Refresh them online; keep the cached copy available for offline reloads.
+  if (url.pathname.startsWith('/_next/static/') && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) {
+    event.respondWith(
+      fetch(req).then((response) => {
+        if (response.status === 200) {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)));
+        }
+        return response;
+      }).catch(async () => {
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        return Response.error();
+      })
+    );
     return;
   }
 

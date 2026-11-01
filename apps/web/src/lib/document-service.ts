@@ -210,6 +210,7 @@ export async function updateDocument(
     isArchived?: boolean;
     isPublic?: boolean;
     clientUpdatedAt?: string;
+    expectedTitle?: string;
   }
 ) {
   const { document } = await verifyDocumentAccess(documentId, userId, "EDIT");
@@ -234,7 +235,10 @@ export async function updateDocument(
   const contentToUpdate = isCollaborative ? undefined : data.content;
 
   return prisma.document.update({
-    where: { id: documentId },
+    where: {
+      id: documentId,
+      ...(data.title !== undefined && data.expectedTitle !== undefined ? { title: data.expectedTitle } : {}),
+    },
     data: {
       ...(data.title !== undefined && { title: data.title.trim() }),
       ...(contentToUpdate !== undefined && { content: contentToUpdate }),
@@ -245,6 +249,11 @@ export async function updateDocument(
       owner: { select: { id: true, name: true, email: true } },
       workspace: { select: { id: true, name: true } },
     },
+  }).catch((error: unknown) => {
+    if (data.expectedTitle !== undefined && error instanceof Error && "code" in error && error.code === "P2025") {
+      throw new ConflictError("The title was changed in another session. Please reload before renaming.");
+    }
+    throw error;
   });
 }
 

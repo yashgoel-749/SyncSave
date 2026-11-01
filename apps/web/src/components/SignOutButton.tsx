@@ -9,7 +9,7 @@ interface SignOutButtonProps {
 }
 
 export function SignOutButton({
-  className = "btn btn-ghost text-xs text-text-muted hover:text-red-400 py-1.5 px-3 border border-border-subtle hover:border-red-500/30 transition-colors",
+  className = "btn btn-ghost text-xs text-text-muted hover:text-danger py-1.5 px-3 border border-border-subtle hover:border-status-danger-border transition-colors",
   redirectTo = "/",
 }: SignOutButtonProps) {
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -31,4 +31,3 @@ export function SignOutButton({
     </button>
   );
 }
-

@@ -30,7 +30,7 @@ export const prisma = new PrismaClient({
  * snapshot when no binary Yjs state exists or it is corrupt.
  */
 const editorSchema = getSchema([
-  StarterKit.configure({ undoRedo: false, heading: { levels: [1, 2, 3] } }),
+  StarterKit.configure({ undoRedo: false, link: false, underline: false, heading: { levels: [1, 2, 3] } }),
   Underline,
   Link.configure({ openOnClick: false }),
 ]);
@@ -113,6 +113,7 @@ export class DocumentManager {
 
         // Store into y-websocket's shared docs map
         this.docs.set(docId, ydoc);
+        if (!hydratedFromBinary) this.scheduleSave(docId, ydoc);
         return ydoc;
       } finally {
         this.initLocks.delete(docId);
@@ -198,25 +199,17 @@ export class DocumentManager {
    * If a flush is already active for this docId, queues sequentially to prevent race conditions.
    */
   async flushDocument(docId: string, ydoc: any): Promise<boolean> {
-    // Wait for any existing flush on this doc to complete first to guarantee ordering
     const existingFlush = this.activeFlushes.get(docId);
-    if (existingFlush) {
-      await existingFlush.catch(() => false);
-    }
-
-    if (!this.dirtyDocs.has(docId)) {
-      return false;
-    }
-    this.dirtyDocs.delete(docId);
-
-    const flushPromise = (async () => {
+    const persist = async () => {
+      if (!this.dirtyDocs.has(docId)) return false;
+      this.dirtyDocs.delete(docId);
       try {
         const stateUpdate = Buffer.from(Y.encodeStateAsUpdate(ydoc));
         let serializedContent: string | null = null;
 
         try {
           const pmJson = yDocToProsemirrorJSON(ydoc, "default");
-          if (pmJson && pmJson.content && pmJson.content.length > 0) {
+          if (pmJson) {
             serializedContent = JSON.stringify(pmJson);
           }
         } catch {
@@ -236,16 +229,20 @@ export class DocumentManager {
         return true;
       } catch (error) {
         logger.error(`Failed to persist document ${docId}:`, error);
-        // Re-mark as dirty so next flush attempt will retry
-        this.dirtyDocs.add(docId);
+        this.scheduleSave(docId, ydoc, 5000);
         return false;
-      } finally {
-        this.activeFlushes.delete(docId);
       }
-    })();
-
+    };
+    // Reserve the queue tail before any caller can await its predecessor.
+    const flushPromise = existingFlush
+      ? existingFlush.catch(() => false).then(persist)
+      : persist();
     this.activeFlushes.set(docId, flushPromise);
-    return flushPromise;
+    try {
+      return await flushPromise;
+    } finally {
+      if (this.activeFlushes.get(docId) === flushPromise) this.activeFlushes.delete(docId);
+    }
   }
 
   /**
@@ -294,13 +291,10 @@ export class DocumentManager {
       clearTimeout(pendingTimer);
       this.persistenceTimers.delete(docId);
     }
-    if (this.dirtyDocs.has(docId)) {
-      const ok = await this.flushDocument(docId, ydoc);
-      if (!ok) {
-        // Could not persist – keep it in memory and retry later.
-        this.scheduleEviction(docId, ydoc);
-        return false;
-      }
+    await this.flushDocument(docId, ydoc);
+    if (this.dirtyDocs.has(docId) || this.activeFlushes.has(docId)) {
+      this.scheduleEviction(docId, ydoc);
+      return false;
     }
 
     // Re-check: a client may have connected while we were flushing.

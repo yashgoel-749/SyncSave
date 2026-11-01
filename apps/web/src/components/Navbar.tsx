@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { LogoLink } from "@/components/Logo";
 import { NotificationBell } from "@/components/NotificationBell";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV_LINKS = [
   { href: "/#features", label: "Features" },
   { href: "/#whiteboard", label: "Whiteboard" },
   { href: "/#how-it-works", label: "How it works" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export function Navbar() {
@@ -27,19 +29,19 @@ export function Navbar() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 glass transition-shadow duration-300 ${
-        scrolled ? "shadow-lg shadow-black/30 border-b border-border-subtle" : "border-b border-transparent"
+        scrolled ? "theme-shadow border-b border-border-subtle" : "border-b border-transparent"
       }`}
       role="banner"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-8">
+        <div className="flex h-16 items-center justify-between gap-3">
           {/* Logo */}
           <LogoLink size="sm" />
 
           {/* Desktop nav */}
           <nav
             aria-label="Primary navigation"
-            className="hidden md:flex items-center gap-1"
+            className="hidden lg:flex items-center gap-1"
           >
             {NAV_LINKS.map(({ href, label }) => (
               <a
@@ -53,7 +55,7 @@ export function Navbar() {
           </nav>
 
           {/* CTA / Auth State */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             {status === "loading" ? (
               <div className="skeleton h-8 w-24 rounded-lg" />
             ) : session?.user ? (
@@ -62,7 +64,7 @@ export function Navbar() {
                 <Link href="/dashboard" className="btn btn-ghost text-sm">
                   Dashboard
                 </Link>
-                <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-xs text-text-primary">
+                <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-xs text-text-primary">
                   <div className="w-2 h-2 rounded-full bg-accent-500 animate-pulse" />
                   <span className="max-w-[120px] truncate font-medium">
                     {session.user.name || session.user.email}
@@ -70,7 +72,7 @@ export function Navbar() {
                 </div>
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
-                  className="btn btn-ghost text-sm text-text-muted hover:text-red-400"
+                  className="btn btn-ghost text-sm text-text-muted hover:text-status-danger"
                 >
                   Sign out
                 </button>
@@ -87,13 +89,15 @@ export function Navbar() {
             )}
           </div>
 
+          <ThemeToggle className="shrink-0" />
+
           {/* Mobile burger */}
           <button
             id="mobile-menu-toggle"
             aria-label="Toggle mobile menu"
             aria-expanded={open}
             aria-controls="mobile-menu"
-            className="md:hidden btn btn-ghost p-2"
+            className="lg:hidden btn btn-ghost p-2"
             onClick={() => setOpen((o) => !o)}
           >
             <span className="sr-only">Menu</span>
@@ -121,7 +125,7 @@ export function Navbar() {
       {/* Mobile drawer */}
       <div
         id="mobile-menu"
-        className={`md:hidden border-t border-border-subtle overflow-hidden transition-all duration-300 ${
+        className={`lg:hidden border-t border-border-subtle overflow-hidden transition-all duration-300 ${
           open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
@@ -151,7 +155,7 @@ export function Navbar() {
                     setOpen(false);
                     signOut({ callbackUrl: "/" });
                   }}
-                  className="btn btn-ghost text-sm text-red-400 justify-start"
+                  className="btn btn-ghost text-sm text-status-danger justify-start"
                 >
                   Sign out
                 </button>

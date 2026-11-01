@@ -129,7 +129,7 @@ export function NotificationBell() {
     switch (type) {
       case "DOCUMENT_INVITATION":
         return (
-          <div className="w-7 h-7 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center flex-shrink-0">
+          <div className="w-7 h-7 rounded-full bg-brand-500/10 text-action flex items-center justify-center flex-shrink-0">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
@@ -137,7 +137,7 @@ export function NotificationBell() {
         );
       case "INVITATION_ACCEPTED":
         return (
-          <div className="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center flex-shrink-0">
+          <div className="status-success w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -145,7 +145,7 @@ export function NotificationBell() {
         );
       case "ROLE_UPDATED":
         return (
-          <div className="w-7 h-7 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center flex-shrink-0">
+          <div className="status-info w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
             </svg>
@@ -153,7 +153,7 @@ export function NotificationBell() {
         );
       case "ACCESS_REVOKED":
         return (
-          <div className="w-7 h-7 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center flex-shrink-0">
+          <div className="status-danger w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
             </svg>
@@ -161,7 +161,7 @@ export function NotificationBell() {
         );
       default:
         return (
-          <div className="w-7 h-7 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center flex-shrink-0">
+          <div className="w-7 h-7 rounded-full bg-purple-500/10 text-violet-foreground flex items-center justify-center flex-shrink-0">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -229,7 +229,7 @@ export function NotificationBell() {
               <button
                 type="button"
                 onClick={markAllAsRead}
-                className="text-[11px] text-brand-400 hover:text-brand-300 transition-colors font-medium"
+                className="text-[11px] text-action hover:underline transition-colors font-medium"
               >
                 Mark all read
               </button>
@@ -306,7 +306,7 @@ export function NotificationBell() {
                             markSingleAsRead(n.id);
                             setIsOpen(false);
                           }}
-                          className="text-[11px] font-medium text-brand-400 hover:text-brand-300 hover:underline inline-flex items-center gap-1"
+                          className="text-[11px] font-medium text-action hover:underline inline-flex items-center gap-1"
                         >
                           Open document →
                         </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -13,8 +13,13 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { IndexeddbPersistence } from "y-indexeddb";
 import EditorToolbar from "./EditorToolbar";
+import DocumentTools from "./DocumentTools";
+import DocumentOutline, { type OutlineVisibility } from "./DocumentOutline";
+import ThemeToggle from "@/components/ThemeToggle";
+import DocumentRecords from "./DocumentRecords";
 import { CollaborationCursor } from "./collaboration-cursor";
 import { parseDocumentContent } from "@/lib/editor-utils";
+import { observeCloudPersistence, type CloudPersistenceStatus } from "@/lib/cloud-persistence";
 import { relativeTime } from "@/lib/utils";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ConfirmDialog, Modal } from "@/components/ui/Modal";
@@ -71,6 +76,30 @@ export default function DocumentEditor({
   userId,
 }: DocumentEditorProps) {
   const router = useRouter();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const outlineId = useId();
+  const [outlineVisibility, setOutlineVisibility] = useState<OutlineVisibility>({ desktopOpen: true, mobileOpen: false });
+  const closeOutline = useCallback(() => {
+    setOutlineVisibility((current) => current.mobileOpen
+      ? { ...current, mobileOpen: false }
+      : { ...current, desktopOpen: false });
+  }, []);
+  const toggleOutline = useCallback(() => {
+    setOutlineVisibility((current) => window.matchMedia("(min-width: 1024px)").matches
+      ? { ...current, desktopOpen: !current.desktopOpen }
+      : { ...current, mobileOpen: !current.mobileOpen });
+  }, []);
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const measure = () => rootRef.current?.style.setProperty("--editor-header-height", `${header.getBoundingClientRect().height}px`);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
 
   // Document state
   const [title, setTitle] = useState(initialDoc.title || "Untitled Document");
@@ -101,8 +130,11 @@ export default function DocumentEditor({
   const [isLocalSynced, setIsLocalSynced] = useState<boolean>(false);
   const [isStorageBlocked, setIsStorageBlocked] = useState<boolean>(false);
   const [pendingSync, setPendingSync] = useState<boolean>(false);
+  const [observedCloudStatus, setCloudStatus] = useState<CloudPersistenceStatus>({ kind: "pending" });
   const [showStatusDetails, setShowStatusDetails] = useState<boolean>(false);
   const [manualOffline, setManualOffline] = useState<boolean>(false);
+  const cloudStatus: CloudPersistenceStatus = !isOnline || manualOffline || collabStatus === "disconnected"
+    ? { kind: "offline" } : observedCloudStatus;
 
   const collabStatusRef = useRef(collabStatus);
   const isSyncedRef = useRef(isSynced);
@@ -189,7 +221,7 @@ export default function DocumentEditor({
   const [confirmRemoveUserId, setConfirmRemoveUserId] = useState<string | null>(null);
 
   // Stale request & concurrency protection for title saves
-  const lastKnownUpdatedAtRef = useRef<string>(initialDoc.updatedAt);
+  const lastSavedTitleRef = useRef(initialDoc.title || "Untitled Document");
   const saveSeqRef = useRef<number>(0);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleRef = useRef(title);
@@ -358,11 +390,6 @@ export default function DocumentEditor({
         provider.on("sync", (synced: boolean) => {
           if (isMounted) {
             setIsSynced(synced);
-            if (synced) {
-              setSaveStatus("saved");
-              setPendingSync(false);
-              setLastSavedTime(new Date());
-            }
           }
         });
 
@@ -425,6 +452,21 @@ export default function DocumentEditor({
     };
   }, [initialDoc.id, collabConfig, userId, initialDoc.userRole, handleOnline, handleOffline]);
 
+  useEffect(() => {
+    if (!collab?.provider || !isOnline || manualOffline || isAccessRevoked) {
+      return;
+    }
+    return observeCloudPersistence({
+      doc: collab.ydoc,
+      provider: collab.provider,
+      documentId: initialDoc.id,
+      onStatus: (status) => {
+        setCloudStatus(status);
+        if (status.kind === "saved") setPendingSync(false);
+      },
+    });
+  }, [collab, initialDoc.id, isOnline, manualOffline, isAccessRevoked]);
+
   // Whiteboard shape count badge (cheap: observes the shared map's size only)
   useEffect(() => {
     if (!collab) return;
@@ -458,6 +500,8 @@ export default function DocumentEditor({
       editable: editorEditable,
       extensions: [
         StarterKit.configure({
+          link: false,
+          underline: false,
           undoRedo: collab ? false : undefined, // Handled by Yjs when collab is enabled
           heading: {
             levels: [1, 2, 3],
@@ -548,7 +592,7 @@ export default function DocumentEditor({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: titleToSave,
-            clientUpdatedAt: lastKnownUpdatedAtRef.current,
+            expectedTitle: lastSavedTitleRef.current,
           }),
         });
 
@@ -570,9 +614,7 @@ export default function DocumentEditor({
         }
 
         const data = await res.json();
-        if (data.document?.updatedAt) {
-          lastKnownUpdatedAtRef.current = data.document.updatedAt;
-        }
+        lastSavedTitleRef.current = data.document?.title ?? titleToSave;
 
         setSaveStatus("saved");
         setLastSavedTime(new Date());
@@ -829,9 +871,9 @@ export default function DocumentEditor({
   const isLive = collabStatus === "connected" && isSynced;
 
   return (
-    <div className="min-h-dvh flex flex-col bg-surface-0 text-text-primary">
+    <div ref={rootRef} className="min-h-dvh flex flex-col bg-surface-0 text-text-primary">
       {/* Top Header / Breadcrumbs & Status Bar */}
-      <header className="border-b border-border-subtle bg-surface-1 sticky top-0 z-30 shadow-lg shadow-black/10">
+      <header ref={headerRef} data-editor-header className="border-b border-border-subtle bg-surface-1 sticky top-0 z-30 shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 min-h-14 py-2 lg:py-0 flex flex-wrap lg:flex-nowrap items-center justify-between gap-x-4 gap-y-2">
           {/* Breadcrumbs & Title Input */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1 order-1">
@@ -887,6 +929,9 @@ export default function DocumentEditor({
               />
             </div>
 
+            <span className="badge badge-brand inline-flex flex-shrink-0">
+              {canEdit ? "Can edit" : "View only"}
+            </span>
           </div>
 
           {/* View switcher (own row on phones, inline from sm up) */}
@@ -903,7 +948,7 @@ export default function DocumentEditor({
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span className="hidden sm:inline">Document</span>
+                <span>Document</span>
               </button>
               <button
                 type="button"
@@ -917,9 +962,9 @@ export default function DocumentEditor({
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
-                <span className="hidden sm:inline">Whiteboard</span>
+                <span>Whiteboard</span>
                 {whiteboardShapeCount > 0 && (
-                  <span className="ml-0.5 px-1.5 rounded-full bg-brand-500/20 text-brand-300 text-[10px] leading-4 tabular-nums">
+                  <span className="ml-0.5 px-1.5 rounded-full bg-brand-500/20 text-action text-[10px] leading-4 tabular-nums">
                     {whiteboardShapeCount}
                   </span>
                 )}
@@ -928,7 +973,7 @@ export default function DocumentEditor({
           </div>
 
           {/* Right Header: Active Participants & Connection Status */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0 order-2 sm:order-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto order-2 sm:order-3">
             {/* Live Participants Avatars */}
             {uniqueParticipants.length > 0 && (
               <div className="flex items-center -space-x-1.5 pr-1" aria-label={`${uniqueParticipants.length} people online`}>
@@ -960,15 +1005,15 @@ export default function DocumentEditor({
                   isStorageBlocked
                     ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
                     : saveStatus === "pending"
-                    ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
-                    : saveStatus === "saving"
-                    ? "bg-brand-500/10 text-brand-300 border-brand-500/20"
-                    : saveStatus === "failed"
+                    ? "bg-amber-500/10 text-warning border-amber-500/20"
+                    : saveStatus === "saving" || cloudStatus.kind === "pending" || cloudStatus.kind === "checking"
+                    ? "bg-brand-500/10 text-action border-brand-500/20"
+                    : saveStatus === "failed" || cloudStatus.kind === "failed"
                     ? "bg-red-500/10 text-red-400 border-red-500/20"
                     : !isOnline || collabStatus === "disconnected"
-                    ? "bg-amber-500/10 text-amber-300 border-amber-500/20 hover:bg-amber-500/15"
+                    ? "bg-amber-500/10 text-warning border-amber-500/20 hover:bg-amber-500/15"
                     : collabStatus === "connecting"
-                    ? "bg-brand-500/10 text-brand-300 border-brand-500/20 hover:bg-brand-500/15"
+                    ? "bg-brand-500/10 text-action border-brand-500/20 hover:bg-brand-500/15"
                     : "bg-accent-500/10 text-accent-400 border-accent-500/20 hover:bg-accent-500/15"
                 }`}
                 title="Click to view detailed synchronization & persistence status"
@@ -981,12 +1026,12 @@ export default function DocumentEditor({
                 ) : saveStatus === "pending" ? (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    <span className="hidden sm:inline">Unsaved changes</span>
+                      <span>Unsaved changes</span>
                   </>
                 ) : saveStatus === "saving" ? (
                   <>
                     <Spinner className="text-brand-400" />
-                    <span className="hidden sm:inline">Saving...</span>
+                      <span>Saving...</span>
                   </>
                 ) : saveStatus === "failed" ? (
                   <>
@@ -1000,26 +1045,31 @@ export default function DocumentEditor({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4l16 16" />
                     </svg>
                     <span className="hidden sm:inline">
-                      {pendingSync ? "Offline (saved locally)" : "Offline"}
+                      {isStorageBlocked ? "Offline · storage blocked" : isLocalSynced ? "Offline · local cache" : "Offline"}
                     </span>
+                    <span className="sm:hidden">Offline</span>
                   </>
                 ) : collabStatus === "connecting" ? (
                   <>
                     <Spinner className="text-brand-400" />
-                    <span className="hidden sm:inline">Connecting...</span>
+                    <span>Connecting...</span>
                   </>
+                ) : cloudStatus.kind === "failed" ? (
+                  <><span className="w-1.5 h-1.5 rounded-full bg-red-400" /><span>Verification failed</span></>
+                ) : cloudStatus.kind !== "saved" ? (
+                  <><Spinner className="text-brand-400" /><span>Saving...</span></>
                 ) : isLive ? (
                   <>
                     <span className="relative flex w-2 h-2">
                       <span className="absolute inline-flex w-full h-full rounded-full bg-accent-400 opacity-60 animate-ping" />
                       <span className="relative inline-flex w-2 h-2 rounded-full bg-accent-400" />
                     </span>
-                    <span className="hidden sm:inline">Live Sync</span>
+                    <span>Saved to cloud</span>
                   </>
                 ) : (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-accent-400" />
-                    <span className="hidden sm:inline">Saved</span>
+                    <span>Saved to cloud</span>
                   </>
                 )}
               </button>
@@ -1046,11 +1096,11 @@ export default function DocumentEditor({
                         isStorageBlocked
                           ? "IndexedDB blocked (private mode/quota)"
                           : isLocalSynced
-                          ? "Saved locally in IndexedDB"
+                           ? "Local cache initialized; updates save in the background"
                           : "Initializing local storage..."
                       }
                       tone={isStorageBlocked ? "red" : isLocalSynced ? "accent" : "brand"}
-                      badge={isStorageBlocked ? "Blocked" : isLocalSynced ? "Saved" : "Loading"}
+                      badge={isStorageBlocked ? "Blocked" : isLocalSynced ? "Available" : "Loading"}
                     />
                     <StatusRow
                       label="Collaboration"
@@ -1066,15 +1116,15 @@ export default function DocumentEditor({
                     />
                     <StatusRow
                       label="Cloud database"
-                      detail={
-                        isLive && !pendingSync
-                          ? "Durably persisted in PostgreSQL"
-                          : pendingSync
-                          ? "Queued locally; syncs on reconnect"
-                          : "Synchronized at last session"
-                      }
-                      tone={isLive && !pendingSync ? "accent" : "amber"}
-                      badge={isLive && !pendingSync ? "Persisted" : "Pending"}
+                      detail={cloudStatus.kind === "saved"
+                        ? "Current document state confirmed in the cloud database, including deletions."
+                        : cloudStatus.kind === "offline"
+                        ? "Reconnect to save and verify your latest document changes."
+                        : cloudStatus.kind === "failed"
+                        ? "Unable to confirm the database save. Retrying when connected."
+                        : "Waiting for the database to contain your latest document changes."}
+                      tone={cloudStatus.kind === "saved" ? "accent" : cloudStatus.kind === "failed" ? "red" : "amber"}
+                      badge={cloudStatus.kind === "saved" ? "Saved to cloud" : cloudStatus.kind === "offline" ? "Offline" : cloudStatus.kind === "failed" ? "Verification failed" : "Saving..."}
                     />
                   </div>
 
@@ -1085,7 +1135,7 @@ export default function DocumentEditor({
                       onClick={toggleSimulatedOffline}
                       className={`w-full py-1.5 px-3 rounded-md text-[11px] font-semibold transition-colors border text-center cursor-pointer ${
                         !isOnline || collabStatus === "disconnected" || manualOffline
-                          ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25"
+                          ? "bg-emerald-500/15 text-success border-emerald-500/30 hover:bg-emerald-500/25"
                           : "bg-surface-2 text-text-secondary border-border-subtle hover:bg-surface-3 hover:text-text-primary"
                       }`}
                     >
@@ -1099,12 +1149,8 @@ export default function DocumentEditor({
             </div>
 
             {/* Notification Bell */}
+            <ThemeToggle />
             <NotificationBell />
-
-            {/* Role Badge */}
-            <span className="badge badge-brand hidden sm:inline-flex">
-              {initialDoc.userRole}
-            </span>
 
             {/* Quick Actions (Share, Archive, Trash) */}
             {canEdit && (
@@ -1118,14 +1164,14 @@ export default function DocumentEditor({
                   <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
-                  <span className="hidden sm:inline">Share</span>
+                  <span>Share</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleToggleArchive}
                   className={`btn btn-ghost text-xs px-2 py-1 hidden sm:inline-flex ${
                     isArchived
-                      ? "text-brand-300 font-semibold"
+                      ? "text-action font-semibold"
                       : "text-text-muted hover:text-text-primary"
                   }`}
                   title={isArchived ? "Unarchive Document" : "Archive Document"}
@@ -1149,6 +1195,19 @@ export default function DocumentEditor({
         </div>
         <div className={view === "document" ? "border-t border-border-subtle px-4 sm:px-6 py-2" : "hidden"}>
           <div className="mx-auto max-w-7xl">
+            <div className="mb-2 flex flex-wrap items-start gap-x-2 gap-y-1" aria-label="Document tools">
+              <DocumentTools editor={isAccessRevoked ? null : editor} title={title} outline={{ visibility: outlineVisibility, onToggle: toggleOutline, id: outlineId }} />
+              {collab && (
+                <DocumentRecords
+                  key={initialDoc.id}
+                  editor={editor}
+                  ydoc={collab.ydoc}
+                  canEdit={editorEditable}
+                  user={collab.user}
+                  participants={uniqueParticipants.map((participant) => ({ id: participant.user.userId, name: participant.user.name }))}
+                />
+              )}
+            </div>
             <EditorToolbar
               editor={editor}
               readOnly={!canEdit}
@@ -1161,7 +1220,7 @@ export default function DocumentEditor({
 
       {/* Error Notification Banner */}
       {errorMessage && (
-        <div className="bg-red-950/80 border-b border-red-500/30 px-4 py-2 text-xs text-red-200 flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="status-danger border-b px-4 py-2 text-xs flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center gap-2 mx-auto max-w-7xl w-full">
             <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -1181,7 +1240,7 @@ export default function DocumentEditor({
 
       {/* Storage Warning Banner */}
       {isStorageBlocked && (
-        <div className="bg-red-950/80 border-b border-red-500/30 px-4 py-2 text-xs text-red-200">
+        <div className="status-danger border-b px-4 py-2 text-xs">
           <div className="flex items-center gap-2 mx-auto max-w-7xl w-full">
             <svg className="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1195,7 +1254,7 @@ export default function DocumentEditor({
 
       {/* Offline Working Banner */}
       {(!isOnline || collabStatus === "disconnected") && (
-        <div className="bg-amber-950/70 border-b border-amber-500/30 px-4 py-2 text-xs text-amber-200 animate-in fade-in duration-200">
+        <div className="status-warning border-b px-4 py-2 text-xs animate-in fade-in duration-200">
           <div className="flex flex-wrap items-center justify-between mx-auto max-w-7xl w-full gap-x-3 gap-y-1.5">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1212,7 +1271,7 @@ export default function DocumentEditor({
               <button
                 type="button"
                 onClick={toggleSimulatedOffline}
-                className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-2.5 py-0.5 rounded-md text-[11px] font-medium border border-amber-500/40 transition-colors cursor-pointer"
+                className="bg-amber-500/10 hover:bg-amber-500/20 text-warning px-2.5 py-0.5 rounded-md text-[11px] font-medium border border-amber-500/40 transition-colors cursor-pointer"
               >
                 Reconnect
               </button>
@@ -1223,13 +1282,13 @@ export default function DocumentEditor({
 
       {/* Main Document Body */}
       <main
-        className={`flex-1 mx-auto w-full px-4 sm:px-6 py-6 flex flex-col ${
-          view === "whiteboard" ? "max-w-7xl" : "max-w-4xl"
-        }`}
+        className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 py-6 sm:py-8 flex items-start gap-6 lg:gap-8"
       >
+        {view === "document" && <DocumentOutline editor={editor} visibility={outlineVisibility} onClose={closeOutline} id={outlineId} />}
+        <div className={`min-w-0 flex-1 flex flex-col ${view === "document" ? "max-w-4xl mx-auto" : ""}`}>
         {/* Document Metadata Pill */}
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted pb-4 mb-4 border-b border-border-subtle/50">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span>
               Author:{" "}
               <strong className="text-text-secondary">
@@ -1256,7 +1315,9 @@ export default function DocumentEditor({
               </>
             )}
           </div>
-          <div suppressHydrationWarning>Last saved {relativeTime(lastSavedTime.toISOString())}</div>
+          <div suppressHydrationWarning>{cloudStatus.kind === "saved"
+            ? `Cloud verified ${relativeTime(cloudStatus.verifiedAt.toISOString())}`
+            : `Title saved ${relativeTime(lastSavedTime.toISOString())}`}</div>
         </div>
 
         {/* Viewer restriction banner */}
@@ -1279,10 +1340,10 @@ export default function DocumentEditor({
 
         {/* Rich-text editor pane (kept mounted while the whiteboard is shown so editor state survives) */}
         <div className={view === "document" ? "flex-1 flex flex-col" : "hidden"}>
-          <div className="flex-1 card border border-border-subtle bg-surface-1 flex flex-col rounded-xl overflow-hidden shadow-xl relative">
+          <div className="flex-1 card border border-border-subtle bg-surface-1 flex flex-col rounded-xl overflow-hidden shadow-sm relative">
             {/* Clickable Canvas Wrapping ProseMirror */}
             <div
-              className="flex-1 p-6 sm:p-10 tiptap-editor-canvas"
+              className="flex-1 p-5 sm:p-10 lg:p-12 tiptap-editor-canvas break-words"
               onClick={() => {
                 if (editorEditable && editor && !editor.isFocused) {
                   editor.commands.focus();
@@ -1338,6 +1399,7 @@ export default function DocumentEditor({
             />
           </div>
         )}
+        </div>
       </main>
 
       {/* Access Revoked Overlay */}
@@ -1427,6 +1489,9 @@ export default function DocumentEditor({
           </div>
 
           {/* Quick Copy Link */}
+          <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-warning">
+            Shared text snapshots and comments are visible to everyone who can view this document, including future link recipients. Sharing may expose earlier text saved in snapshots. Copying the document link does not grant access by itself.
+          </p>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-text-secondary">Document link</label>
             <div className="flex items-center gap-2">
@@ -1492,8 +1557,8 @@ export default function DocumentEditor({
                 role="status"
                 className={`p-2 rounded-md text-xs border animate-in fade-in ${
                   shareMessage.isError
-                    ? "bg-red-500/10 text-red-300 border-red-500/20"
-                    : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
+                    ? "bg-red-500/10 text-danger border-red-500/20"
+                    : "bg-emerald-500/10 text-success border-emerald-500/20"
                 }`}
               >
                 {shareMessage.text}
@@ -1503,7 +1568,7 @@ export default function DocumentEditor({
             {/* Generated Invitation Link Display */}
             {generatedInviteUrl && (
               <div className="p-2.5 rounded-lg bg-surface-2 border border-brand-500/30 space-y-1.5 animate-in fade-in">
-                <div className="text-[11px] font-semibold text-brand-300">Invitation link — works without an account</div>
+                <div className="text-[11px] font-semibold text-action">Invitation link — works without an account</div>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"

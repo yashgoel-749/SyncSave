@@ -139,7 +139,7 @@ function InviteAcceptContent() {
             </div>
           ) : error && !invitation ? (
             <div className="py-6 text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center mx-auto">
+              <div className="status-danger w-12 h-12 rounded-full flex items-center justify-center mx-auto">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -170,7 +170,7 @@ function InviteAcceptContent() {
           ) : invitation ? (
             <div className="space-y-6">
               <div className="text-center space-y-1">
-                <div className="w-12 h-12 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center mx-auto mb-3">
+                <div className="w-12 h-12 rounded-full bg-brand-500/10 text-action flex items-center justify-center mx-auto mb-3">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -272,7 +272,7 @@ function InviteAcceptContent() {
                     password later from the sign-up page to keep the account.
                   </p>
                   <div className="text-center">
-                    <Link href={loginHref} className="text-[11px] text-brand-400 hover:text-brand-300 hover:underline">
+                    <Link href={loginHref} className="text-[11px] text-action hover:underline">
                       Have an existing account? Sign in instead
                     </Link>
                   </div>
@@ -293,7 +293,7 @@ function InviteAcceptContent() {
               )}
 
               {error && (
-                <div role="alert" className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-xs animate-in fade-in">
+                <div role="alert" className="status-danger p-3 rounded-lg border text-xs animate-in fade-in">
                   {error}
                 </div>
               )}

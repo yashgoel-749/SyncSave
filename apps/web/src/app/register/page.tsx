@@ -130,10 +130,10 @@ function RegisterForm() {
         {errorMessage && (
           <div
             role="alert"
-            className="mb-6 p-3.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3 animate-in fade-in duration-200"
+            className="status-danger mb-6 p-3.5 rounded-lg border text-sm flex items-start gap-3 animate-in fade-in duration-200"
           >
             <svg
-              className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-400"
+              className="w-5 h-5 flex-shrink-0 mt-0.5 text-danger"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -200,7 +200,7 @@ function RegisterForm() {
               }`}
             />
             {fieldErrors.email && (
-              <p className="mt-1.5 text-xs text-red-400">{fieldErrors.email}</p>
+              <p className="mt-1.5 text-xs text-danger">{fieldErrors.email}</p>
             )}
           </div>
 
@@ -250,7 +250,7 @@ function RegisterForm() {
               </button>
             </div>
             {fieldErrors.password && (
-              <p className="mt-1.5 text-xs text-red-400">{fieldErrors.password}</p>
+              <p className="mt-1.5 text-xs text-danger">{fieldErrors.password}</p>
             )}
           </div>
 
@@ -281,7 +281,7 @@ function RegisterForm() {
               }`}
             />
             {fieldErrors.confirmPassword && (
-              <p className="mt-1.5 text-xs text-red-400">{fieldErrors.confirmPassword}</p>
+              <p className="mt-1.5 text-xs text-danger">{fieldErrors.confirmPassword}</p>
             )}
           </div>
 
@@ -356,7 +356,7 @@ function RegisterForm() {
           Already have an account?{" "}
           <Link
             href={`/login${callbackUrl !== "/dashboard" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
-            className="text-brand-secondary hover:text-brand-primary font-medium hover:underline transition-colors"
+            className="text-action font-medium hover:underline transition-colors"
           >
             Sign in
           </Link>

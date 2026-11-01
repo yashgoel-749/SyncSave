@@ -108,6 +108,28 @@ describe("Document Service & Permissions Enforcement", () => {
   });
 
   describe("updateDocument", () => {
+    it("checks title concurrency atomically without conflicting with newer content saves", async () => {
+      (prisma.document.findUnique as jest.Mock).mockResolvedValueOnce({
+        id: "doc_1", ownerId: "usr_alice", title: "Original", collaborators: [],
+        updatedAt: new Date(), yjsState: Buffer.from([0, 0]),
+      });
+      (prisma.document.update as jest.Mock).mockResolvedValueOnce({ id: "doc_1", title: "Renamed" });
+      const request = { title: "Renamed", expectedTitle: "Original" };
+      await updateDocument("doc_1", "usr_alice", request);
+      expect(prisma.document.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: "doc_1", title: "Original" }, data: { title: "Renamed" },
+      }));
+    });
+
+    it("reports a title conflict when another rename wins the atomic write", async () => {
+      (prisma.document.findUnique as jest.Mock).mockResolvedValueOnce({
+        id: "doc_1", ownerId: "usr_alice", title: "Original", collaborators: [],
+      });
+      (prisma.document.update as jest.Mock).mockRejectedValueOnce(Object.assign(new Error("No matching row"), { code: "P2025" }));
+      const request = { title: "Renamed", expectedTitle: "Original" };
+      await expect(updateDocument("doc_1", "usr_alice", request)).rejects.toThrow(ConflictError);
+    });
+
     it("should allow document owner to rename document", async () => {
       (prisma.document.findUnique as jest.Mock).mockResolvedValueOnce({
         id: "doc_1",

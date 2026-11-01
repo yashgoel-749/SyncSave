@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { sanitizeUrl } from "@/lib/editor-utils";
 import { Modal } from "@/components/ui/Modal";
@@ -37,9 +37,9 @@ function ToolbarButton({
       title={title}
       aria-label={title}
       aria-pressed={active}
-      className={`h-7 min-w-7 px-1.5 rounded-md inline-flex items-center justify-center text-xs transition-colors disabled:opacity-30 disabled:hover:bg-transparent ${
+      className={`h-9 min-w-9 px-2 rounded-lg inline-flex items-center justify-center text-sm transition-colors disabled:opacity-30 disabled:hover:bg-transparent ${
         active
-          ? "bg-brand-500/20 text-brand-200 shadow-[inset_0_0_0_1px_hsl(246_68%_56%/0.35)]"
+          ? "bg-brand-500/15 text-action shadow-[inset_0_0_0_1px_var(--border-normal)]"
           : "text-text-secondary hover:bg-surface-3 hover:text-text-primary"
       } ${className}`}
     >
@@ -49,7 +49,7 @@ function ToolbarButton({
 }
 
 function Divider() {
-  return <span className="w-px h-5 bg-border-subtle mx-1" aria-hidden="true" />;
+  return <span className="w-px h-6 bg-border-normal mx-1 hidden sm:block" aria-hidden="true" />;
 }
 
 export default function EditorToolbar({
@@ -60,16 +60,24 @@ export default function EditorToolbar({
 }: EditorToolbarProps) {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [showMore, setShowMore] = useState(false);
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || typeof editor.on !== "function") return;
+    const update = () => setRevision((value) => value + 1);
+    editor.on("transaction", update);
+    return () => { editor.off("transaction", update); };
+  }, [editor]);
 
-  if (!editor || readOnly) {
+  if (!editor || readOnly || editor.isEditable === false) {
     return (
       <div className="flex items-center justify-between px-4 py-2 bg-surface-2 rounded-xl text-xs text-text-muted select-none">
         <div className="flex items-center gap-2">
           <svg className="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H10m4-11a4 4 0 00-8 0v4h8V6z" />
           </svg>
-          <span className="font-medium text-text-secondary">Read-only view</span>
-          <span>— Editing is disabled for your permission level</span>
+          <span className="font-medium text-text-secondary">{readOnly ? "Read-only view" : !editor ? "Loading editor…" : "Preparing editor…"}</span>
+          {readOnly && <span>— Editing is disabled for your permission level</span>}
         </div>
       </div>
     );
@@ -105,8 +113,19 @@ export default function EditorToolbar({
   const isLinkActive = editor.isActive("link");
 
   return (
-    <div role="toolbar" aria-label="Document formatting" className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 bg-surface-2 rounded-xl text-xs">
+    <div role="toolbar" aria-label="Document formatting" data-toolbar-revision={revision}
+      className="flex flex-wrap items-center gap-x-1 gap-y-1 p-1.5 border border-border-subtle bg-surface-1 rounded-xl text-xs shadow-sm"
+      onKeyDown={(event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || !(event.target instanceof HTMLButtonElement) || event.target.closest('[role="dialog"]')) return;
+        const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")).filter((button) => button.getBoundingClientRect().width > 0 && !button.closest('[role="dialog"]'));
+        const current = buttons.indexOf(event.target);
+        if (current < 0 || !buttons.length) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1 : (current + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length;
+        buttons[next].focus();
+      }}>
       {/* History */}
+      <div role="group" aria-label="Undo and redo" className="flex items-center gap-0.5">
       <ToolbarButton
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().undo()}
@@ -126,9 +145,11 @@ export default function EditorToolbar({
         </svg>
       </ToolbarButton>
 
+      </div>
       <Divider />
 
       {/* Block type */}
+      <div role="group" aria-label="Paragraph and headings" className="flex items-center gap-0.5">
       <ToolbarButton
         onClick={() => editor.chain().focus().setParagraph().run()}
         active={editor.isActive("paragraph")}
@@ -149,9 +170,11 @@ export default function EditorToolbar({
         </ToolbarButton>
       ))}
 
+      </div>
       <Divider />
 
       {/* Inline marks */}
+      <div role="group" aria-label="Text styles" className="flex items-center gap-0.5">
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
         active={editor.isActive("bold")}
@@ -173,6 +196,10 @@ export default function EditorToolbar({
       >
         <span className="underline underline-offset-2 px-0.5">U</span>
       </ToolbarButton>
+      </div>
+      <button type="button" className="sm:hidden btn btn-ghost px-2 py-1 text-xs" aria-expanded={showMore} aria-label="More formatting options" onMouseDown={(event) => event.preventDefault()} onClick={() => setShowMore((value) => !value)}>More {showMore ? "−" : "+"}</button>
+      <div className={showMore ? "contents" : "hidden sm:contents"}>
+      <div role="group" aria-label="Additional text styles" className="flex items-center gap-0.5">
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleStrike().run()}
         active={editor.isActive("strike")}
@@ -189,9 +216,11 @@ export default function EditorToolbar({
         {"</>"}
       </ToolbarButton>
 
+      </div>
       <Divider />
 
       {/* Blocks */}
+      <div role="group" aria-label="Lists and blocks" className="flex items-center gap-0.5">
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         active={editor.isActive("bulletList")}
@@ -235,9 +264,11 @@ export default function EditorToolbar({
         </svg>
       </ToolbarButton>
 
+      </div>
       <Divider />
 
       {/* Link */}
+      <div role="group" aria-label="Links" className="flex items-center gap-0.5">
       <ToolbarButton
         onClick={handleOpenLinkModal}
         active={isLinkActive}
@@ -254,10 +285,12 @@ export default function EditorToolbar({
           </svg>
         </ToolbarButton>
       )}
+      </div>
+      </div>
 
       {documentId && dictationEnabled && <VoiceDictation key={documentId} editor={editor} documentId={documentId} />}
 
-      <div className="ml-auto hidden md:flex items-center">
+      <div className={`ml-auto items-center ${showMore ? "flex" : "hidden sm:flex"}`}>
         <ToolbarButton
           onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
           title="Clear formatting"

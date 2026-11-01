@@ -19,6 +19,8 @@ jest.mock("@tiptap/react", () => {
       let isItalic = false;
       return {
         isFocused: false,
+        on: jest.fn(),
+        off: jest.fn(),
         commands: {
           focus: jest.fn(),
         },
@@ -132,6 +134,16 @@ describe("DocumentEditor & EditorToolbar Components", () => {
   });
 
   describe("DocumentEditor Permissions & Lifecycle", () => {
+    it("exposes less-used mobile formatting through More", () => {
+      render(<DocumentEditor document={baseDoc} userId="usr_alice" />);
+      const more = screen.getByRole("button", { name: "More formatting options" });
+      expect(more).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(more);
+      expect(more).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByRole("button", { name: "Clear formatting" })).toBeInTheDocument();
+      fireEvent.click(more);
+      expect(more).toHaveAttribute("aria-expanded", "false");
+    });
     it("keeps one formatting toolbar with the title and actions outside the document canvas", () => {
       render(<DocumentEditor document={baseDoc} userId="usr_alice" />);
 
@@ -158,8 +170,8 @@ describe("DocumentEditor & EditorToolbar Components", () => {
 
       const titleInput = screen.getByDisplayValue("Project Architecture") as HTMLInputElement;
       expect(titleInput).not.toBeDisabled();
-      expect(screen.getByText("OWNER")).toBeInTheDocument();
-      expect(screen.getByText(/Connecting\.\.\.|Live Sync|Saved/)).toBeInTheDocument();
+      expect(screen.getByText("Can edit")).toBeInTheDocument();
+      expect(screen.getByText(/Connecting\.\.\.|Live Sync|Synced/)).toBeInTheDocument();
       expect(screen.getByTestId("mock-prosemirror-canvas")).toBeInTheDocument();
     });
 
@@ -173,7 +185,7 @@ describe("DocumentEditor & EditorToolbar Components", () => {
 
       const titleInput = screen.getByDisplayValue("Project Architecture") as HTMLInputElement;
       expect(titleInput).toBeDisabled();
-      expect(screen.getByText("VIEWER")).toBeInTheDocument();
+      expect(screen.getByText("View only")).toBeInTheDocument();
       expect(screen.getByText("Read-only view")).toBeInTheDocument();
     });
 
